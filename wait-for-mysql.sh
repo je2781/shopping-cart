@@ -12,14 +12,17 @@ until nc -z "$host" "$port"; do
 done
 
 # Fix Laravel permissions every time container starts
-chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
-chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache public/build \
+    && chmod -R 775 storage bootstrap/cache public/build
 
 echo "Running migrations..."
 composer migrate
 
 echo "Running seeders..."
 composer seed
+
+# Start Nginx in background
+nginx -g "daemon off;" &
 
 echo "Starting PHP-FPM..."
 

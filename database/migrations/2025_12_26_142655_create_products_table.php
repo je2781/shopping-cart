@@ -19,9 +19,12 @@ return new class extends Migration
             $table->timestamps();
             $table->decimal('price');
             $table->string('name');
+            $table->text('description')->nullable();
+            $table->string('image_path')->nullable();
+            $table->integer('stock_quantity')->default(0);
             $table->foreignIdFor(User::class, 'seller_id');
-            $table->foreignIdFor(Order::class, 'order_id');
-            $table->foreignIdFor(Cart::class, 'cart_id');
+            $table->foreignIdFor(Order::class, 'order_id')->nullable();
+            $table->foreignIdFor(Cart::class, 'cart_id')->nullable();
         });
     }
 

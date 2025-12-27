@@ -42,11 +42,7 @@
     "scripts": {
         "setup": [
             "composer install",
-            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
-            "@php artisan key:generate",
-            "@php artisan migrate --force",
-            "npm install",
-            "npm run build"
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
@@ -60,6 +56,12 @@
         "test": [
             "@php artisan config:clear --ansi",
             "@php artisan test"
+        ],
+        "migrate": [
+        "@php artisan migrate --force --ansi"
+        ],
+        "seed": [
+            "@php artisan db:seed --ansi"
         ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
