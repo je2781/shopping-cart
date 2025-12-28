@@ -35,21 +35,20 @@ RUN npm run build
 # =========================
 FROM php:8.4-cli AS build-laravel
 
-# Install system dependencies for PHP extensions
 RUN apt-get update && apt-get install -y \
     unzip git curl libzip-dev \
     && docker-php-ext-install zip
 
-# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# Copy source code first (needed for post-install scripts)
+# Copy FULL Laravel app first
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader
+# Now composer can safely run artisan
+RUN composer install --no-dev --optimize-autoloader --prefer-dist
+
 
 # =========================
 # Stage 3: Runtime PHP-FPM
@@ -58,9 +57,8 @@ FROM php:8.4-fpm
 
 WORKDIR /var/www
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git unzip curl procps \
+    nginx \
     libpng-dev libjpeg-dev libfreetype6-dev \
     libonig-dev libxml2-dev libzip-dev \
     default-mysql-client netcat-openbsd \
@@ -68,31 +66,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install pdo_mysql mbstring zip bcmath gd \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Redis extension
+RUN pecl install redis && docker-php-ext-enable redis
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Copy Laravel app from build-laravel stage
-COPY --from=build-laravel /app .
+# Copy Laravel app
+COPY --from=build-laravel /app /var/www
 
-# Copy built assets from build-assets stage
-COPY --from=build-assets /app/public/build ./public/build
+# Copy built assets into the correct public path
+COPY --from=build-assets /app/public/build /var/www/public/build
 
 # Install PHP dependencies (runtime)
-RUN composer install --optimize-autoloader
+RUN composer install --optimize-autoloader --prefer-dist
 
-# Set permissions
 RUN chown -R www-data:www-data storage bootstrap/cache public/build \
     && chmod -R 775 storage bootstrap/cache public/build
 
-# Copy custom Nginx config from project root
-COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Ensure Nginx logs folder exists
-RUN mkdir -p /var/log/nginx
+COPY nginx.conf /etc/nginx/sites-available/default
 
-# Expose ports: 80 for HTTP, 9000 for PHP-FPM (optional)
-EXPOSE 80 9000
+COPY wait-for-mysql.sh /usr/local/bin/wait-for-mysql.sh
+RUN chmod +x /usr/local/bin/wait-for-mysql.sh
 
-# Start script to launch PHP-FPM + Nginx after waiting for MySQL
-CMD ["sh", "-c", "/usr/local/bin/wait-for-mysql.sh"]
+EXPOSE 80
+CMD ["sh", "/usr/local/bin/wait-for-mysql.sh"]
+

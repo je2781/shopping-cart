@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Models\User;
 
 return new class extends Migration
 {
@@ -12,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('orders', function (Blueprint $table) {
+        Schema::create('product_order', function (Blueprint $table) {
             $table->id();
+            $table->foreignIdFor(\App\Models\Product::class)->constrained()->onDelete('cascade');
+            $table->foreignIdFor(\App\Models\Order::class)->constrained()->onDelete('cascade');
             $table->timestamps();
-            $table->jsonb('items');
-            $table->decimal('total');
-            $table->string('status')->default('pending');
-            $table->foreignIdFor(User::class, 'user_id')->constrained()->onDelete('cascade');
         });
     }
 
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('orders');
+        Schema::dropIfExists('product_order');
     }
 };

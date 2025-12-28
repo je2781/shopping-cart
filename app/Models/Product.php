@@ -19,5 +19,19 @@ class Product extends Model
         'stock_quantity',
     ];
 
-    
+    public function seller()
+    {
+        return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function orders()
+    {
+        return $this->belongsToMany(Order::class);
+    }
+
+
+    public function cart()
+    {
+        return $this->belongsTo(Cart::class, 'cart_id');
+    }
 }

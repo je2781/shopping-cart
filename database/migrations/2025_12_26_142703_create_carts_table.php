@@ -18,7 +18,7 @@ return new class extends Migration
             $table->bigInteger('quantity')->default(0);
             $table->jsonb('items');
             $table->decimal('total_price');
-            $table->foreignIdFor(User::class, 'user_id');
+            $table->foreignIdFor(User::class, 'user_id')->constrained()->onDelete('cascade');
         });
     }
 

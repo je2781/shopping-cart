@@ -30,7 +30,7 @@ class ProductsSold extends Command
      */
     public function handle()
     {
-                $today = Carbon::today();
+        $today = Carbon::today();
 
         $orders = Order::with('items.product')
             ->whereDate('created_at', $today)

@@ -18,8 +18,8 @@ class Order extends Model
         'items' => 'array',
     ];
 
-    public function items()
+    public function products()
     {
-        return $this->hasMany(Product::class);
+        return $this->belongsToMany(Product::class);
     }
 }
