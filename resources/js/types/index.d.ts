@@ -45,11 +45,24 @@ export type CartItem = {
     imageUrl: string;
     
 };
+export type OrderItem = {
+    id: number;
+    quantity: number;
+    price: number;
+    stock: number;    
+};
 
 export type Cart = {
     items: CartItem[];
     count: number;
     total: number;
+};
+
+export type Order = {
+    id: number;
+    total: number;
+    created_at: string;
+    items: OrderItem[];
 };
 
 export interface SharedData {
@@ -58,5 +71,6 @@ export interface SharedData {
     auth: Auth;
     sidebarOpen: boolean;
     cart: Cart | null;
+    order: Order | null;
     [key: string]: unknown;
 }

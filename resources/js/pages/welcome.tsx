@@ -1,7 +1,6 @@
 import { dashboard, login, logout, register } from '@/routes';
 import { MinusCircle, PlusCircle } from 'lucide-react';
 import debounce from 'lodash.debounce';
-import {route} from 'ziggy-js';
 import { type SharedData } from '@/types';
 import { Head, Link, useForm, usePage,router } from '@inertiajs/react';
 import React from 'react';
@@ -22,33 +21,31 @@ export default function Welcome({
     const { auth, cart } = usePage<SharedData>().props;
 
     
-    const { data, setData, post, processing, errors } = useForm<{
+    const { data, setData } = useForm<{
         items: CartItem[];
-        operation: 'add';
+        operation?: 'add' | 'remove';
     }>({
         items: [],
-        operation: 'add',
     });
     
 
     const debouncedSubmit = React.useMemo(
         () =>
             debounce(() => {
-                post(route('cart.store'), {
+                router.post('/cart', data, {
                     preserveScroll: true,
                     preserveState: true,
-                    onSuccess: () => router.reload()
-
+                    
                 });
+
             }, 300),
-        []
+        [data] // depend on data
     );
 
-    React.useEffect(() => {
-        if (data.items.length > 0) {
-            debouncedSubmit();
-        }
 
+    React.useEffect(() => {
+        debouncedSubmit();
+        
         return () => {
             debouncedSubmit.cancel();
         };
@@ -65,6 +62,7 @@ export default function Welcome({
             items:  prev.items.map(i =>
                 i.id === productId ? { ...i, quantity } : i
             ),
+            operation: 'add',
         }));
     };
 
@@ -81,12 +79,14 @@ export default function Welcome({
                             ? { ...i, quantity: i.quantity + quantity }
                             : i
                     ),
+                    operation: 'add',
                 };
             }
 
             return {
                 ...prev,
                 items: [...prev.items, { id: productId, quantity }],
+                operation: 'add',
             };
         });
     };
@@ -108,7 +108,7 @@ export default function Welcome({
                
                         {auth.user ? (
                             <>
-                                <HeaderCartButton cartItems={cart?.items ?? []} onClick={() => {
+                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => {
                                     router.visit('/cart');
                                 }} />
                                 <Link

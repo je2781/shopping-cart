@@ -11,11 +11,12 @@ use Laravel\Fortify\Features;
 
 class CartController extends Controller
 {
-        public function store(Request $request)
+
+    public function store(Request $request)
     {
-          $atrributes = $request->validate([
+        $attributes = $request->validate([
             'items' => ['required', 'array'],
-            'items.*.id' => ['required', 'exists:items,id'],
+            'items.*.id' => ['required', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'operation' => ['in:add,deduct,remove'],
         ]);
@@ -25,21 +26,23 @@ class CartController extends Controller
             ['user_id' => Auth::id()],
         );
 
-        foreach ($atrributes['items'] as $item) {
 
-            if ($atrributes['operation'] === 'add') {
+        foreach ($attributes['items'] as $item) {
+            if ($attributes['operation'] === 'add') {
                 $cart->addProduct($item['id'], $item['quantity']);
-            } elseif ($atrributes['operation'] === 'deduct') {
+            } elseif ($attributes['operation'] === 'deduct') {
                 $cart->deductProduct($item['id'], $item['quantity']);
-            }else{
+            } else {
                 $cart->removeProduct($item['id']);
             }
         }
-  
 
-         return response()->json(['success' => true]);
+
+        return redirect()->back()->with('success', 'Cart updated!');
+
 
     }
+
 
     public function index()
     {

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 
 import "./cart.css";
-import { useForm } from "@inertiajs/react";
+import { router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash-es";
 import { CartItem } from "@/types";
 
@@ -11,7 +11,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     const [loader, setLoader] = useState(false);
     const _isInit = useRef(true);
 
-    const { data, setData, post, processing, errors } = useForm<{
+    const { data, setData } = useForm<{
         items: CartItem[];
         operation?: 'add' | 'remove' | 'deduct';
     }>({
@@ -31,7 +31,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
 
     const debouncedSubmit = useMemo(
         () => debounce(() => {
-            post('/cart', {
+            router.post('/cart', data,{
               preserveScroll: true,
               replace: true,
               onStart: () => setLoader(true),
@@ -40,7 +40,6 @@ export default function CartComponent({ total, cartItems }: { total: number, car
           }, 300),
         []
     );
-
     
     useEffect(() => {
       if (_isInit.current) return;
@@ -59,12 +58,10 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     }, [cartItems, total]);
 
     useEffect(() => {
-      //change initial ref after first render
-      _isInit.current = false;
+      if (_isInit.current) return;
 
-      if (data.items.length > 0) {
-          debouncedSubmit();
-      }
+      debouncedSubmit();
+      
       
       // Cleanup debounce on unmount
       return () => {
@@ -73,11 +70,16 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     }, [data.items]);
     
 
+    useEffect(() => {
+         //change initial ref after first render
+      _isInit.current = false;
+    }, []);
+
 
     const syncQuantity = (productId: number, quantity: number, operation: 'add' | 'remove' | 'deduct') => {
       setData(prev => ({
           ...prev,
-          items: prev.items.map(i =>
+          items:  prev.items.map(i =>
               i.id === productId ? { ...i, quantity } : i
           ),
           operation

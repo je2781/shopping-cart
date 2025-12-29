@@ -9,10 +9,10 @@ use Laravel\Fortify\Features;
 
 Route::middleware(['auth', 'verified'])->get('/', [ProductController::class, 'index'])->name('home');
 
+Route::middleware(['auth'])->post('/cart', [CartController::class, 'store'])
+->name('cart.store');
 Route::get('/cart', [CartController::class, 'index'])
     ->name('cart.index');
-Route::middleware(['auth'])->post('/cart', [CartController::class, 'store'])
-    ->name('cart.store');
 
 
 // Route::middleware(['auth', 'verified'])->group(function () {

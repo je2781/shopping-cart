@@ -14,7 +14,7 @@ export default function CartPage({
     total: number;
     canRegister?: boolean;
 }) {
-    const { auth } = usePage<SharedData>().props;
+    const { auth, cart } = usePage<SharedData>().props;
 
     return(
         <>
@@ -31,7 +31,7 @@ export default function CartPage({
                         {auth.user ? (
                             <>
                             
-                                <HeaderCartButton cartItems={cartItems} onClick={() => {
+                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => {
                                     // Navigate to cart page
                                     window.location.href = '/cart';
                                 }} />   
