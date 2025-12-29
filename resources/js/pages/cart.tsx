@@ -1,5 +1,6 @@
 import CartComponent from "@/components/cart/cart-content";
-import { dashboard, login, register } from "@/routes";
+import HeaderCartButton from "@/components/header/header-cart-button";
+import { login, logout, register } from "@/routes";
 import { SharedData } from "@/types";
 import { Head, Link, usePage } from "@inertiajs/react";
 
@@ -28,12 +29,19 @@ export default function CartPage({
                 <header className="mb-6 w-full max-w-[335px] text-sm not-has-[nav]:hidden lg:max-w-4xl">
                     <nav className="flex items-center justify-end gap-4">
                         {auth.user ? (
-                            <Link
-                                href={dashboard()}
-                                className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
-                            >
-                                Dashboard
-                            </Link>
+                            <>
+                            
+                                <HeaderCartButton cartItems={cartItems} onClick={() => {
+                                    // Navigate to cart page
+                                    window.location.href = '/cart';
+                                }} />   
+                                <Link
+                                    href={logout()}
+                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+                                >
+                                    Log out
+                                </Link>
+                            </>
                         ) : (
                             <>
                                 <Link

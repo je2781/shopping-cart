@@ -14,12 +14,12 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->decimal('total_price', 10, 2);
+            $table->string('status')->default('pending'); // optional
             $table->timestamps();
-            $table->jsonb('items');
-            $table->decimal('total');
-            $table->string('status')->default('pending');
-            $table->foreignIdFor(User::class, 'user_id')->constrained()->onDelete('cascade');
         });
+
     }
 
     /**

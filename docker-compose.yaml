@@ -16,6 +16,10 @@ services:
       - ./database:/var/www/database
       - ./resources:/var/www/resources
       - ./routes:/var/www/routes
+      - ./composer.json:/var/www/composer.json
+      - ./composer.lock:/var/www/composer.lock
+      - ./package.json:/var/www/package.json
+      - ./package-lock.json:/var/www/package-lock.json
     depends_on:
       - admin_db
       - redis

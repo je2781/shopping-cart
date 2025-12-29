@@ -22,13 +22,6 @@ export interface NavItem {
     isActive?: boolean;
 }
 
-export interface SharedData {
-    name: string;
-    quote: { message: string; author: string };
-    auth: Auth;
-    sidebarOpen: boolean;
-    [key: string]: unknown;
-}
 
 export interface User {
     id: number;
@@ -40,4 +33,30 @@ export interface User {
     created_at: string;
     updated_at: string;
     [key: string]: unknown; // This allows for additional properties...
+}
+
+// types/cart.ts (or inline)
+export type CartItem = {
+    id: number;
+    name: string;
+    quantity: number;
+    price: number;
+    stock: number;
+    imageUrl: string;
+    
+};
+
+export type Cart = {
+    items: CartItem[];
+    count: number;
+    total: number;
+};
+
+export interface SharedData {
+    name: string;
+    quote: { message: string; author: string };
+    auth: Auth;
+    sidebarOpen: boolean;
+    cart: Cart | null;
+    [key: string]: unknown;
 }

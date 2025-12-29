@@ -17,43 +17,46 @@ class CartController extends Controller
             'items' => ['required', 'array'],
             'items.*.id' => ['required', 'exists:items,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'operation' => ['in:add,remove'],
+            'operation' => ['in:add,deduct,remove'],
         ]);
 
         // Add to cart logic
+        $cart = Cart::firstOrCreate(
+            ['user_id' => Auth::id()],
+        );
+
         foreach ($atrributes['items'] as $item) {
-            $cart = Cart::firstOrCreate(
-                ['user_id' => Auth::id()],
-                ['items' => [], 'quantity' => 0, 'total_price' => 0]
-            );
 
             if ($atrributes['operation'] === 'add') {
                 $cart->addProduct($item['id'], $item['quantity']);
-            } elseif ($atrributes['operation'] === 'remove') {
+            } elseif ($atrributes['operation'] === 'deduct') {
                 $cart->deductProduct($item['id'], $item['quantity']);
+            }else{
+                $cart->removeProduct($item['id']);
             }
         }
   
 
-        return back()->with('success', 'Cart updated successfully!');
+         return response()->json(['success' => true]);
+
     }
 
     public function index()
     {
-        $cart = Cart::where('user_id', Auth::id())->with('items')->first();
+        $cart = Cart::where('user_id', Auth::id())->with('items.product')->first();
 
         $cartItems = [];
 
         if( $cart ) {
-            $cartItems = collect($cart->items)->map(function ($item) {
-                $product = Product::find($item['product_id']);
+            $cartItems = $cart->items->map(function ($item) {
+                $product = $item->product;
                 return [
-                    'id' => (int) $item['product_id'],
+                    'id' => (int) $item->product_id,
                     'name' => (string) $product->name,
                     'price' => (float) $product->price,
                     'imageUrl' => (string) $product->image_path,
                     'stock' => (int) $product->stock_quantity,
-                    'quantity' => (int) $item['quantity'],
+                    'quantity' => (int) $item->quantity,
                 ];
             })->toArray();
         }
@@ -61,7 +64,7 @@ class CartController extends Controller
         return Inertia::render('cart', [
             'canRegister' => Features::enabled(Features::registration()),
             'cartItems' => $cartItems,
-            'total' => $cart->getTotalAmount() ?? 0,
+            'total' => $cart->recalculateTotals(),
         ]);
     }
 }

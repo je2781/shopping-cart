@@ -10,24 +10,20 @@ use Illuminate\Support\Facades\DB;
 class Cart extends Model
 {
     protected $fillable = [
-        'quantity',      // number of different products in cart
-        'items',         // JSON array of items: [{ product_id, quantity }]
-        'total_price',   // total price of cart
         'user_id',
     ];
 
-    protected $casts = [
-        'items' => 'array',
-    ];
 
-    public function getTotalAmount(): float
+
+    public function items(): HasMany
     {
-        return $this->total_price;
+        return $this->hasMany(CartItem::class);
     }
 
-    public function products(): HasMany
+    public function products()
     {
-        return $this->hasMany(Product::class);
+        return $this->belongsToMany(Product::class, 'cart_items')
+                    ->withPivot('quantity');
     }
 
     /**
@@ -38,6 +34,7 @@ class Cart extends Model
     {
         DB::transaction(function () use ($productId, $quantity) {
 
+            // Lock the product row to prevent race conditions
             $product = Product::lockForUpdate()->find($productId);
 
             if (! $product) {
@@ -48,21 +45,19 @@ class Cart extends Model
                 throw new \Exception('Not enough stock available');
             }
 
-            $items = $this->items ?? [];
+            // Check if the product is already in the cart
+            $cartItem = $this->items()->where('product_id', $productId)->first();
 
-            $index = collect($items)->search(
-                fn ($item) => $item['product_id'] === $productId
-            );
-
-            if ($index === false) {
-                // New product → add to cart
-                $items[] = [
+            if ($cartItem) {
+                // Increment existing quantity
+                $cartItem->quantity += $quantity;
+                $cartItem->save();
+            } else {
+                // Add new product to cart
+                $this->items()->create([
                     'product_id' => $productId,
                     'quantity'   => $quantity,
-                ];
-            } else {
-                // Existing product → increment quantity
-                $items[$index]['quantity'] += $quantity;
+                ]);
             }
 
             // Deduct stock
@@ -73,9 +68,6 @@ class Cart extends Model
                 ProductStockLowJob::dispatch($product->id);
             }
 
-            $this->items = $items;
-            $this->recalculateTotals();
-            $this->save();
         });
     }
 
@@ -84,40 +76,54 @@ class Cart extends Model
      */
     public function deductProduct(int $productId, int $quantity = 1): void
     {
-        $items = $this->items ?? [];
+        DB::transaction(function () use ($productId, $quantity) {
 
-        $index = collect($items)->search(fn($i) => $i['product_id'] === $productId);
+            // Find the cart item
+            $cartItem = $this->items()->where('product_id', $productId)->first();
 
-        if ($index !== false) {
-            $items[$index]['quantity'] -= $quantity;
-
-            if ($items[$index]['quantity'] <= 0) {
-                // Remove product completely
-                array_splice($items, $index, 1);
+            if (! $cartItem) {
+                // Product not in cart, nothing to do
+                return;
             }
 
-            $this->items = $items;
-            $this->recalculateTotals();
-            $this->save();
-        }
+            // Deduct the quantity
+            $cartItem->quantity -= $quantity;
+            
+            if ($cartItem->quantity <= 0 ) {
+                // Remove product completely from cart
+                $cartItem->delete();
+            } else{
+                // Update quantity
+                $cartItem->save();
+            }
+        });
     }
+
+    public function removeProduct(int $productId): void
+    {
+        DB::transaction(function () use ($productId) {
+
+            // Find the cart item
+            $cartItem = $this->items()->where('product_id', $productId)->first();
+
+            if (! $cartItem) {
+                // Product not in cart, nothing to do
+                return;
+            }
+
+            // Remove product completely from cart
+            $cartItem->delete();
+
+        });
+    }
+
 
     /**
      * Recalculate total price and number of different products.
      */
-    protected function recalculateTotals(): void
+    public function recalculateTotals(): float
     {
-        $totalPrice = 0;
-        $items = $this->items ?? [];
-
-        foreach ($items as $item) {
-            $product = Product::find($item['product_id']);
-            if ($product) {
-                $totalPrice += $product->price * $item['quantity'];
-            }
-        }
-
-        $this->quantity = count($items); // number of different products
-        $this->total_price = $totalPrice;
+        return $this->items->sum(fn ($item) => $item->product ? $item->product->price * $item->quantity : 0);
     }
+
 }

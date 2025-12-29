@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('product_order', function (Blueprint $table) {
+        Schema::create('cart_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(\App\Models\Product::class)->constrained()->onDelete('cascade');
-            $table->foreignIdFor(\App\Models\Order::class)->constrained()->onDelete('cascade');
+            $table->foreignId('cart_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->unsignedInteger('quantity');
             $table->timestamps();
+
+            $table->unique(['cart_id', 'product_id']); // prevent duplicates
         });
     }
 
@@ -24,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('product_order');
+        Schema::dropIfExists('cart_items');
     }
 };

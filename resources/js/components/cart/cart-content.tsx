@@ -3,15 +3,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import "./cart.css";
 import { useForm } from "@inertiajs/react";
 import { debounce } from "lodash-es";
-
-interface CartItem {
-  price: number;
-  quantity: number;
-  imageUrl: string;
-  stock: number;
-  id: number;
-  name: string;
-}
+import { CartItem } from "@/types";
 
 export default function CartComponent({ total, cartItems }: { total: number, cartItems: CartItem[] }) {
     const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
@@ -21,7 +13,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
 
     const { data, setData, post, processing, errors } = useForm<{
         items: CartItem[];
-        operation?: 'add' | 'remove';
+        operation?: 'add' | 'remove' | 'deduct';
     }>({
         items: cartItems
     });
@@ -69,34 +61,33 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     useEffect(() => {
       //change initial ref after first render
       _isInit.current = false;
+
+      if (data.items.length > 0) {
+          debouncedSubmit();
+      }
       
       // Cleanup debounce on unmount
       return () => {
           debouncedSubmit.cancel();
       };
-    }, [debouncedSubmit]);
+    }, [data.items]);
     
 
 
-    const syncQuantity = (productId: number, quantity: number) => {
+    const syncQuantity = (productId: number, quantity: number, operation: 'add' | 'remove' | 'deduct') => {
       setData(prev => ({
           ...prev,
           items: prev.items.map(i =>
               i.id === productId ? { ...i, quantity } : i
           ),
+          operation
       }));
 
-      debouncedSubmit();
     };
 
 
-
-    const getQuantity = (productId: number) => {
-      return data.items.find(i => i.id === productId)?.quantity ?? 1;
-    };
-    
-    const updateQuantity = (product: CartItem, nextQty: number = 0) => {
-      const safeQty = Math.min(nextQty, product.stock);
+    const updateQuantity = (product: CartItem, operation: 'add' | 'remove' | 'deduct', nextQty: number = 0, ) => {
+      const safeQty = Math.max(1, Math.min(nextQty, product.stock));
 
       // Instant UI update
       setQuantities(q => ({
@@ -110,7 +101,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
       }));
 
       // Debounced form sync
-      syncQuantity(product.id, safeQty);
+      syncQuantity(product.id, safeQty, operation);
     };
 
 
@@ -195,7 +186,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                             <div className="flex flex-row gap-x-7 text-gray-600 border border-gray-600 px-5 py-2 w-36 h-12 items-center">
                               <button
                                 onClick={() =>
-                                  updateQuantity(item, quantities[item.id] - 1)
+                                  updateQuantity(item, 'deduct', quantities[item.id] - 1)
 
                                 }
                                 className={`text-lg font-sans text-gray-600 font-semibold ${
@@ -216,7 +207,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                                 }`}
                                 disabled={loader}
                                 onClick={() =>
-                                  updateQuantity(item, quantities[item.id] + 1)
+                                  updateQuantity(item, 'add', quantities[item.id] + 1)
                                 }
                               >
                                 +
@@ -237,7 +228,8 @@ export default function CartComponent({ total, cartItems }: { total: number, car
 
                                 const v = Number(e.currentTarget.value);
                                 if (!Number.isInteger(v)) return;
-                                updateQuantity(item, v);
+                                const operation = v > quantities[item.id] ? 'add' : 'deduct';
+                                updateQuantity(item, operation, v);
                               }}
                               disabled={loader}
                               onFocus={(e) => {
@@ -257,12 +249,14 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                               onInput={(e) => {
                                 const v = Number(e.currentTarget.value);
                                 if (!Number.isInteger(v)) return;
-                                updateQuantity(item, v);
+
+                                const operation = v > quantities[item.id] ? 'add' : 'deduct';
+                                updateQuantity(item, operation, v);
                               }}
                               className="bg-transparent w-14 absolute left-[42px] bottom-0 border-none h-12
                                             text-sm font-sans text-gray-600 focus:outline-none text-center z-10
                                             p-2"
-                              value={getQuantity(item.id)}
+                              value={quantities[item.id]}
                             />
                           </div>
                           <i
@@ -272,7 +266,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                             onClick={() => {
                               if (!loader) {
                                 //updating cart data in backend
-                                updateQuantity(item);
+                                updateQuantity(item, 'remove');
 
                               }
                             }}
