@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y \
     unzip git curl libzip-dev \
     && docker-php-ext-install zip
 
+ENV COMPOSER_PROCESS_TIMEOUT=1200
+
 # Install Composer (needed for wayfinder if it uses composer)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -39,6 +41,8 @@ RUN apt-get update && apt-get install -y \
     unzip git curl libzip-dev \
     && docker-php-ext-install zip
 
+ENV COMPOSER_PROCESS_TIMEOUT=1200
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
@@ -57,8 +61,9 @@ FROM php:8.4-fpm
 
 WORKDIR /var/www
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     nginx \
+    unzip git curl \
     libpng-dev libjpeg-dev libfreetype6-dev \
     libonig-dev libxml2-dev libzip-dev \
     default-mysql-client netcat-openbsd \
@@ -66,8 +71,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install pdo_mysql mbstring zip bcmath gd \
     && rm -rf /var/lib/apt/lists/*
 
+
 # Install Redis extension
 RUN pecl install redis && docker-php-ext-enable redis
+
+ENV COMPOSER_PROCESS_TIMEOUT=1200
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -78,8 +86,12 @@ COPY --from=build-laravel /app /var/www
 # Copy built assets into the correct public path
 COPY --from=build-assets /app/public/build /var/www/public/build
 
+
 # Install PHP dependencies (runtime)
-RUN composer install --optimize-autoloader --prefer-dist
+RUN composer install \
+    --optimize-autoloader \
+    --no-interaction \
+    --prefer-dist
 
 RUN chown -R www-data:www-data storage bootstrap/cache public/build \
     && chmod -R 775 storage bootstrap/cache public/build

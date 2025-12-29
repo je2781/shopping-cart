@@ -21,7 +21,7 @@ class CartController extends Controller
             'operation' => ['in:add,deduct,remove'],
         ]);
 
-        // Add to cart logic
+        // retrive user cart or create new one
         $cart = Cart::firstOrCreate(
             ['user_id' => Auth::id()],
         );

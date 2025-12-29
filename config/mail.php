@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER', 'mailtrap-sdk'),
 
     /*
     |--------------------------------------------------------------------------
@@ -96,6 +96,12 @@ return [
             ],
             'retry_after' => 60,
         ],
+
+        // start mailtrap transport
+        'mailtrap-sdk' => [
+            'transport' => 'mailtrap-sdk'
+        ],
+        // end mailtrap transport
 
     ],
 

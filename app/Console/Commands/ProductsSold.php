@@ -50,8 +50,29 @@ class ProductsSold extends Command
             return;
         }
 
-        Mail::to($admin->email)
-            ->send(new DailySalesReportMail($orders, $today));
+        Mail::to($admin->email)->send(
+            new DailySalesReportMail(
+                $orders->map(function ($order) {
+                    return [
+                        'id' => (int) $order->id,
+                        'customer_name' => optional($order->user)->name,
+                        'total' => (float) $order->total_price,
+                        'items' => $order->items->map(function ($item) {
+                            $product = $item->product;
+
+                            return [
+                                'name' => (string) $product->name,
+                                'price' => (float) $item->price,
+                                'quantity' => (int) $item->quantity,
+                                'image_url' => (string) $product->image_path,
+                            ];
+                        })->toArray(),
+                    ];
+                })->toArray(),
+                $today
+            )
+        );
+
 
         $this->info('Daily sales report sent successfully.');
     }

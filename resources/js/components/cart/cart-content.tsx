@@ -2,8 +2,8 @@ import { useState, useMemo, useEffect, useRef } from "react";
 
 import "./cart.css";
 import { router, useForm } from "@inertiajs/react";
-import { debounce } from "lodash-es";
-import { CartItem } from "@/types";
+import { debounce, set } from "lodash-es";
+import { CartItem, OrderItem } from "@/types";
 
 export default function CartComponent({ total, cartItems }: { total: number, cartItems: CartItem[] }) {
     const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
@@ -12,10 +12,12 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     const _isInit = useRef(true);
 
     const { data, setData } = useForm<{
-        items: CartItem[];
+        cartItems: CartItem[];
+        orderItems: OrderItem[];
         operation?: 'add' | 'remove' | 'deduct';
     }>({
-        items: cartItems
+        cartItems,
+        orderItems: [],
     });
 
     
@@ -29,7 +31,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
       ))
     );
 
-    const debouncedSubmit = useMemo(
+    const debouncedCartUpdate = useMemo(
         () => debounce(() => {
             router.post('/cart', data,{
               preserveScroll: true,
@@ -40,6 +42,8 @@ export default function CartComponent({ total, cartItems }: { total: number, car
           }, 300),
         []
     );
+
+
     
     useEffect(() => {
       if (_isInit.current) return;
@@ -60,14 +64,28 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     useEffect(() => {
       if (_isInit.current) return;
 
-      debouncedSubmit();
+      debouncedCartUpdate();
       
       
       // Cleanup debounce on unmount
       return () => {
-          debouncedSubmit.cancel();
+          debouncedCartUpdate.cancel();
       };
-    }, [data.items]);
+    }, [data.cartItems]);
+
+    useEffect(() => {
+      if (_isInit.current) return;
+
+        router.post('/checkout', {
+          items: data.orderItems,
+          total: totalAmount
+        }, {
+          preserveScroll: true,
+          replace: true,
+          onStart: () => setLoader(true),
+          onFinish: () => setLoader(false),
+        });
+    }, [data.orderItems]);
     
 
     useEffect(() => {
@@ -79,7 +97,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     const syncQuantity = (productId: number, quantity: number, operation: 'add' | 'remove' | 'deduct') => {
       setData(prev => ({
           ...prev,
-          items:  prev.items.map(i =>
+          cartItems:  prev.cartItems.map(i =>
               i.id === productId ? { ...i, quantity } : i
           ),
           operation
@@ -105,6 +123,25 @@ export default function CartComponent({ total, cartItems }: { total: number, car
       // Debounced form sync
       syncQuantity(product.id, safeQty, operation);
     };
+
+    const handleCheckout = async () => {
+      try {
+        setIsCreatingCheckout(true); 
+        setData(prev => ({
+          ...prev,
+          orderItems: prev.cartItems.map(i => ({
+            id: i.id,
+            quantity: quantities[i.id],
+            price: i.price,
+          })),
+        }));  
+      } catch (error) {
+        console.error("Checkout failed:", error);
+      }finally {
+        setIsCreatingCheckout(false); 
+      }
+    
+    }         
 
 
 
@@ -144,7 +181,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
               </div>
 
             )}
-            {data.items.map(
+            {data.cartItems.map(
               (item: CartItem, i: number) =>
                 quantities[i]! > 0 && (
                   <section
@@ -299,7 +336,8 @@ export default function CartComponent({ total, cartItems }: { total: number, car
               </p>
             </div>
             <button
-              // onClick={handleCheckout}
+              onClick={handleCheckout}
+              type="button"
               disabled={loader}
               className={` text-white text-sm px-24 py-3 flex flex-row justify-center items-center ${
                 isCreatingCheckout ? "md:w-[256px]" : ""

@@ -26,6 +26,11 @@ class Cart extends Model
                     ->withPivot('quantity');
     }
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
     /**
      * Add a product to the cart.
      * Only increases `quantity` if it's a new product.
@@ -95,6 +100,12 @@ class Cart extends Model
             } else{
                 // Update quantity
                 $cartItem->save();
+            }
+
+            // Restore stock
+            $product = Product::find($productId);
+            if ($product) {
+                $product->increment('stock_quantity', $quantity);
             }
         });
     }

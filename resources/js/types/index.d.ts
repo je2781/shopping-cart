@@ -49,7 +49,6 @@ export type OrderItem = {
     id: number;
     quantity: number;
     price: number;
-    stock: number;    
 };
 
 export type Cart = {
@@ -61,7 +60,6 @@ export type Cart = {
 export type Order = {
     id: number;
     total: number;
-    created_at: string;
     items: OrderItem[];
 };
 
