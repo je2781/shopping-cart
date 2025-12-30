@@ -1,17 +1,11 @@
-import { dashboard, login, logout, register } from '@/routes';
 import { MinusCircle, PlusCircle } from 'lucide-react';
 import debounce from 'lodash.debounce';
 import { type SharedData } from '@/types';
 import { Head, Link, useForm, usePage,router } from '@inertiajs/react';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import HeaderCartButton from '@/components/header/header-cart-button';
-import { route } from 'ziggy-js';
 import toast from 'react-hot-toast';
 
-type CartItem = {
-    id: number;
-    quantity: number;
-};
 
 export default function Welcome({
     canRegister = true,
@@ -24,47 +18,39 @@ export default function Welcome({
     const [quantities, setQuantities] = useState<Record<number, number>>(
         Object.fromEntries(products.map((product) => [product.id, 1]))
     );
-    const _isInit = React.useRef(true);
+    const _isInit = useRef(true);
     
     const { data, setData } = useForm<{
-        items: CartItem[];
+        items: {
+            id: number;
+            quantity: number;
+        }[];
         operation?: 'add' | 'remove';
     }>({
-        items: cart?.items ?? [],
+        items: [],
     });
-
-    React.useEffect(() => {
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
-    
-
-    const debouncedSubmit = React.useMemo(
-        () =>
-            debounce(() => {
-                router.post('/cart', data, {
-                    preserveScroll: true,
-                    preserveState: false,
-                });
-
-            }, 300),
-        [data] // depend on data
-    );
 
 
     React.useEffect(() => {
         if (_isInit.current) return;
 
-        debouncedSubmit();
-        
+        let timer = setTimeout(() => {
+            router.post('/cart', data, {
+                preserveScroll: true,
+                preserveState: true,
+            });
+        }, 200);
+
         return () => {
-            debouncedSubmit.cancel();
-        };
+            clearTimeout(timer);
+        }
     }, [data.items]);
+
 
     React.useEffect(() => {
         _isInit.current = false;
-    }, []);
-
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
 
 
     const updateQuantity = (productId: number, quantity: number) => {
@@ -76,30 +62,42 @@ export default function Welcome({
       }));
     };
 
-    const addToCart = (productId: number, stock: number, quantity = 1) => {
-        setData(prev => {
-            const existingItem = prev.items.find(i => i.id === productId);
+    const addToCart = (productId: number, qty: number) => {
+        const product = products.find(p => p.id === productId);
+        if (!product) return; // safety check
 
-            if (existingItem) {
-                // Optional: increment existing quantity
+        setData(prev => {
+            const updatedItems = [...prev.items];
+            const existingItemIndex = updatedItems.findIndex(i => i.id === productId);
+
+            if (existingItemIndex !== -1) {
+                // Update quantity of existing item without exceeding stock
+                const newQuantity = Math.min(
+                    qty + updatedItems[existingItemIndex].quantity,
+                    product.stock
+                );
+
+                updatedItems[existingItemIndex] = {
+                    ...updatedItems[existingItemIndex],
+                    quantity: newQuantity,
+                };
+
                 return {
                     ...prev,
-                    items: prev.items.map(i =>
-                        i.id === productId && quantity < stock
-                            ? { ...i, quantity }
-                            : i
-                    ),
+                    items: updatedItems,
                     operation: 'add',
                 };
             }
 
+            // Add new item, respecting stock
             return {
                 ...prev,
-                items: [...prev.items, { id: productId, quantity }],
+                items: [...prev.items, { id: productId, quantity: Math.min(qty, product.stock) }],
                 operation: 'add',
             };
         });
     };
+
 
 
 
@@ -118,35 +116,29 @@ export default function Welcome({
                
                         {auth.user ? (
                             <>
-                                <HeaderCartButton 
-                                    noOfCartItems={cart?.count ?? 0} 
-                                    onClick={() => {
-                                        debouncedSubmit.cancel(); // Cancel any pending debounced submits
-                                        router.visit('/cart');    // ✅ now navigation works
-                                    }}
-                                />
-                                <button
-                                    onClick={() =>{
-                                        router.post('/logout', {}, {
-                                            preserveState: false,
-                                        });
-                                    }}
+                                <Link href="/cart">
+                                    <HeaderCartButton 
+                                        noOfCartItems={cart?.count ?? 0} 
+                                    />
+                                </Link>
+                                <Link
+                                    href="/logout" method="post" as="button"
                                     className="cursor-pointer inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log out
-                                </button>
+                                </Link>
                             </>
                         ) : (
                             <>
                                 <Link
-                                    href={login()}
+                                    href="/login"
                                     className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log in
                                 </Link>
                                 {canRegister && (
                                     <Link
-                                        href={register()}
+                                        href="/register"
                                         className="inline-block rounded-sm border border-[#19140035] px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#1915014a] dark:border-[#3E3E3A] dark:text-[#EDEDEC] dark:hover:border-[#62605b]"
                                     >
                                         Register
@@ -171,7 +163,7 @@ export default function Welcome({
                                                 <span className={`${product.stock > 0 ? 'bg-green-500' : 'bg-red-500'} absolute bottom-2 left-2 rounded-full text-xs text-white py-1 px-3`}>{product.stock} in stock</span>
                                                 <img
                                                     src={product.imageUrl}
-                                                    alt={product.name}
+                                                    alt={product.id}
                                                     className="h-full w-full object-cover"
                                                 />
                                             </div>
@@ -234,9 +226,9 @@ export default function Welcome({
                                                         product.stock === 0
                                                     }
                                                     onClick={() => {
-                                                        if(data.items.some((item) => item.id === product.id))return;
                                                         const qty = quantities[product.id];
-                                                        addToCart(product.id, product.stock, qty);
+
+                                                        addToCart(product.id, qty);
                                                     }}  
                                                     className={`${
                                                         product.stock === 0

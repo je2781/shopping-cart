@@ -91,16 +91,12 @@ class Cart extends Model
                 return;
             }
 
+       
             // Deduct the quantity
             $cartItem->quantity -= $quantity;
+            // Update quantity
+            $cartItem->save();
             
-            if ($cartItem->quantity <= 0 ) {
-                // Remove product completely from cart
-                $cartItem->delete();
-            } else{
-                // Update quantity
-                $cartItem->save();
-            }
 
             // Restore stock
             $product = Product::find($productId);
@@ -110,9 +106,9 @@ class Cart extends Model
         });
     }
 
-    public function removeProduct(int $productId): void
+    public function removeProduct(int $productId, int $quantity): void
     {
-        DB::transaction(function () use ($productId) {
+        DB::transaction(function () use ($productId, $quantity) {
 
             // Find the cart item
             $cartItem = $this->items()->where('product_id', $productId)->first();
@@ -124,6 +120,12 @@ class Cart extends Model
 
             // Remove product completely from cart
             $cartItem->delete();
+
+            // Restore stock
+            $product = Product::find($productId);
+            if ($product) {
+                $product->increment('stock_quantity', $quantity);
+            }
 
         });
     }

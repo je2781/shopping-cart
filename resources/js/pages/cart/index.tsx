@@ -34,17 +34,13 @@ export default function Cart({
                         {auth.user ? (
                             <>
                             
-                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => {}} />   
-                                <button
-                                    onClick={() =>{
-                                        router.post('/logout', {}, {
-                                            preserveState: false,
-                                        });
-                                    }}
+                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} />   
+                                <Link
+                                    href="/logout" method="post" as="button"
                                     className="cursor-pointer inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log out
-                                </button>
+                                </Link>
                             </>
                         ) : (
                             <>

@@ -10,21 +10,19 @@ use Laravel\Fortify\Features;
 
 
 
-Route::get('/cart', [CartController::class, 'index'])
+Route::get('cart', [CartController::class, 'index'])
 ->name('cart.index');
-Route::middleware(['auth', 'verified'])->get('/', [ProductController::class, 'index'])->name('home');
-Route::middleware(['auth'])->post('/cart', [CartController::class, 'store'])
+Route::middleware('auth')->get('/', [ProductController::class, 'index'])->name('home');
+Route::middleware('auth')->post('/cart', [CartController::class, 'store'])
 ->name('cart.store');
-Route::middleware(['auth'])->post('/checkout', [OrderController::class, 'store'])
+Route::middleware('auth')->post('/checkout', [OrderController::class, 'store'])
 ->name('order.store');
 
-Route::post('/logout', function () {
+Route::post('logout', function () {
     Auth::logout();
-    request()->session()->invalidate();
-    request()->session()->regenerateToken();
 
     return redirect('/login');
-})->name('logout');
+})->middleware('auth')->name('logout');
 
 
 // Route::middleware(['auth', 'verified'])->group(function () {

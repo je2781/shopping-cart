@@ -6,9 +6,9 @@ import { debounce, set } from "lodash-es";
 import { CartItem, OrderItem } from "@/types";
 import { Trash2Icon } from "lucide-react";
 import { route } from "ziggy-js";
+import { home } from "@/routes";
 
 export default function CartComponent({ total, cartItems }: { total: number, cartItems: CartItem[] }) {
-    const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
     const [totalAmount, setTotalAmount] = useState(total);
     const [loader, setLoader] = useState(false);
     const _isInit = useRef(true);
@@ -16,7 +16,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     const { data, setData } = useForm<{
         cartItems: CartItem[];
         orderItems: OrderItem[];
-        operation?: 'add' | 'remove' | 'deduct';
+        operation?: 'add' | 'deduct' | 'remove';
     }>({
         cartItems,
         orderItems: [],
@@ -33,43 +33,38 @@ export default function CartComponent({ total, cartItems }: { total: number, car
       ))
     );
 
-    const debouncedCartUpdate = useMemo(
-        () => debounce(() => {
-            router.post('/cart', data,{
-              preserveScroll: true,
-              replace: true,
-              onStart: () => setLoader(true),
-              onFinish: () => setLoader(false),
-            });
-          }, 300),
-        []
-    );
-
 
     useEffect(() => {
       if (_isInit.current) return;
 
-      debouncedCartUpdate();
+      let timer = setTimeout(() => {
+        router.post('/cart', data,{
+            preserveScroll: true,
+            preserveState: true,
+            onStart: () => setLoader(true),
+            onFinish: () => setLoader(false),
+          });
+      }, 200);
       
       
       // Cleanup debounce on unmount
       return () => {
-          debouncedCartUpdate.cancel();
+          clearTimeout(timer);
       };
     }, [data.cartItems]);
 
     useEffect(() => {
       if (_isInit.current) return;
 
-        router.post(route('order.store'), {
-          items: data.orderItems,
-          total: totalAmount
-        }, {
-          preserveScroll: true,
-          replace: true,
-          onStart: () => setLoader(true),
-          onFinish: () => setLoader(false),
-        });
+      router.post('/checkout', {
+        items: data.orderItems,
+        total: totalAmount
+      }, {
+        preserveScroll: true,
+        preserveState: true,
+        onStart: () => setLoader(true),
+        onFinish: () => setLoader(false),
+      });
     }, [data.orderItems]);
     
 
@@ -79,10 +74,10 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     }, []);
 
 
-    const syncQuantity = (productId: number, quantity: number, operation: 'add' | 'remove' | 'deduct') => {
+    const syncQuantity = (productId: number, quantity: number, operation: 'add' | 'deduct' | 'remove') => {
       setData(prev => ({
           ...prev,
-          cartItems:  prev.cartItems.map(i =>
+          cartItems: prev.cartItems.map(i =>
               i.id === productId ? { ...i, quantity } : i
           ),
           operation
@@ -91,32 +86,60 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     };
 
 
-    const updateQuantity = (product: CartItem, operation: 'add' | 'remove' | 'deduct', nextQty: number = 0, ) => {
-      const safeQty = Math.max(1, Math.min(nextQty, product.stock));
+    const updateQuantity = (product: CartItem, operation: 'add' | 'deduct' | 'remove', nextQty: number) => {
 
       // Instant UI update
-      setQuantities(q => ({
+      setQuantities(q => {
+        if(operation === 'remove'){
+          
+          const { [product.id]: _, ...rest } = q;
+
+          return rest;
+        }
+
+        return{
         ...q,
-        [product.id]: safeQty,
-      }));
+        [product.id]: nextQty,
+        };
+      });
 
-      setItemTotalAmounts(t => ({
-        ...t,
-        [product.id]: safeQty * product.price,
-      }));
+      setItemTotalAmounts(t => {
+        if(operation === 'remove'){
+          const {[product.id]: _, ...rest} = t;
 
-      setTotalAmount(Object.values({
-        ...itemTotalAmounts,
-        [product.id]: safeQty * product.price,
-      }).reduce((acc, val) => acc + val, 0));
+          return rest;
+        }
+
+        return {
+          ...t,
+          [product.id]: nextQty * product.price,
+        };
+      });
+
+      let updatedItemTotalAmounts: Record<number, number> = {};
+
+      if(operation === 'remove'){
+        const {[product.id]: _, ...rest} = itemTotalAmounts;
+
+        updatedItemTotalAmounts = rest;
+      }else{
+
+        updatedItemTotalAmounts = {
+          ...itemTotalAmounts,
+          [product.id]: nextQty * product.price,
+        };
+      }
+
+      
+      setTotalAmount(Object.values(
+        updatedItemTotalAmounts
+      ).reduce((acc, val) => acc + val, 0));
 
       // Debounced form sync
-      syncQuantity(product.id, safeQty, operation);
+      syncQuantity(product.id, nextQty, operation);
     };
 
-    const handleCheckout = async () => {
-      try {
-        setIsCreatingCheckout(true); 
+    const handleCheckout =  () => {
         setData(prev => ({
           ...prev,
           orderItems: prev.cartItems.map(i => ({
@@ -125,11 +148,6 @@ export default function CartComponent({ total, cartItems }: { total: number, car
             price: i.price,
           })),
         }));  
-      } catch (error) {
-        console.error("Checkout failed:", error);
-      }finally {
-        setIsCreatingCheckout(false); 
-      }
     
     }         
 
@@ -141,7 +159,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
         <main className="min-h-screen w-full container mx-auto pl-2 pr-3 lg:pl-0 lg:pr-6 md:pt-12 pt-5 flex flex-col gap-y-5 justify-center items-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
           <i className="fa-solid cursor-pointer fa-bag-shopping text-gray-600 text-3xl"></i>
           <h1 className="font-sans text-2xl italic">Cart is Empty!</h1>
-          <button className="bg-gray-700 text-[1rem] font-sans text-white px-7 py-3 hover:ring-2 ring-gray-700 border-0">
+          <button onClick={() => router.visit(home())} className="cursor-pointer bg-gray-700 text-[1rem] font-sans text-white px-7 py-3 hover:ring-2 ring-gray-700 border-0">
             Start shopping
           </button>
         </main>
@@ -173,7 +191,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
             )}
             {data.cartItems.map(
               (item: CartItem, i: number) =>
-                quantities[item.id]! > 0 && (
+                quantities[item.id] > 0 && (
                   <section
                     key={i}
                     className="border-[0.7px] border-gray-300 border-l-0 border-r-0 border-t-0 w-full py-7"
@@ -203,7 +221,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                         <h1 className="text-lg font-sans font-extralight md:hidden">
                           &#8358;
                           {parseFloat(
-                            itemTotalAmounts[item.id]!.toFixed(2)
+                            itemTotalAmounts[item.id].toFixed(2)
                           ).toLocaleString("en-US")}
                         </h1>
                       </article>
@@ -240,7 +258,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                                 disabled={loader}
                                 onClick={() => {
                                   const qnt = quantities[item.id] + 1;
-                                  if(qnt <= item.stock){
+                                  if(qnt < item.stock){
                                     updateQuantity(item, 'add', qnt);
                                   }
                                 }}
@@ -264,7 +282,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                                 const v = Number(e.currentTarget.value);
                                 if (!Number.isInteger(v) || v < 1) return;
                                 const operation = v > quantities[item.id] ? 'add' : 'deduct';
-                                updateQuantity(item, operation, v);
+                                updateQuantity(item, operation, Math.min(v, item.stock));
                               }}
                               disabled={loader}
                               onFocus={(e) => {
@@ -286,7 +304,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                                 if (!Number.isInteger(v) || v < 1) return;
 
                                 const operation = v > quantities[item.id] ? 'add' : 'deduct';
-                                updateQuantity(item, operation, v);
+                                updateQuantity(item, operation, Math.min(v, item.stock));
                               }}
                               className="bg-transparent w-14 absolute left-[42px] bottom-0 border-none h-12
                                             text-sm font-sans text-gray-600 focus:outline-none text-center z-10
@@ -301,7 +319,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                             onClick={() => {
                               if (!loader) {
                                 //updating cart data in backend
-                                updateQuantity(item, 'remove');
+                                updateQuantity(item, 'remove', quantities[item.id]);
 
                               }
                             }}
@@ -310,7 +328,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                         <h1 className="text-lg font-sans font-extralight hidden md:inline-block text-start">
                           &#8358;
                           {parseFloat(
-                            itemTotalAmounts[item.id]!.toFixed(2)
+                            itemTotalAmounts[item.id].toFixed(2)
                           ).toLocaleString("en-US")}
                         </h1>
                       </section>
@@ -336,14 +354,14 @@ export default function CartComponent({ total, cartItems }: { total: number, car
               type="button"
               disabled={loader}
               className={` text-white text-sm px-24 py-3 flex flex-row justify-center items-center ${
-                isCreatingCheckout ? "md:w-[256px]" : ""
+                loader ? "md:w-[256px]" : ""
               } ${
                 loader
                   ? "bg-gray-200 cursor-not-allowed"
                   : "bg-gray-700 hover:ring-gray-700 cursor-pointer hover:ring-2"
               }`}
             >
-              {isCreatingCheckout ? (
+              {loader ? (
                 <div className="border-2 border-transparent rounded-full border-t-white border-r-white w-[15px] h-[15px] spin"></div>
               ) : (
                 "CHECKOUT"

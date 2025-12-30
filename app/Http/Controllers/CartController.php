@@ -34,8 +34,8 @@ class CartController extends Controller
                     $cart->addProduct($item['id'], $item['quantity']);
                 } elseif ($attributes['operation'] === 'deduct') {
                     $cart->deductProduct($item['id'], $item['quantity']);
-                } else {
-                    $cart->removeProduct($item['id']);
+                }else{
+                    $cart->removeProduct($item['id'], $item['quantity']);
                 }
             } catch (\Exception $e) {
                 return redirect()->back()->with('error', $e->getMessage());
@@ -51,7 +51,7 @@ class CartController extends Controller
 
     public function index()
     {
-        return Inertia::render('cart', [
+        return Inertia::render('cart/index', [
             'canRegister' => Features::enabled(Features::registration()),
         ]);
     }

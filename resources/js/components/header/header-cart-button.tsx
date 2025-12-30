@@ -4,10 +4,8 @@ import { useEffect, useState } from "react";
 
 const HeaderCartButton = ({
   noOfCartItems,
-  onClick,
 }: {
   noOfCartItems: number;
-  onClick: () => void;
 }) => {
   const [animate, setAnimate] = useState(false);
 
@@ -21,7 +19,7 @@ const HeaderCartButton = ({
   }, [noOfCartItems]);
 
   return (
-    <span className="relative" onClick={onClick}>
+    <span className="relative">
         <ShoppingCart className="text-gray-600 text-xl cursor-pointer transition-transform hover:scale-125" />
 
         {noOfCartItems > 0 && (
