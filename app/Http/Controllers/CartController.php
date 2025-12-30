@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+use PhpParser\Node\Stmt\TryCatch;
 
 class CartController extends Controller
 {
@@ -28,12 +29,16 @@ class CartController extends Controller
 
 
         foreach ($attributes['items'] as $item) {
-            if ($attributes['operation'] === 'add') {
-                $cart->addProduct($item['id'], $item['quantity']);
-            } elseif ($attributes['operation'] === 'deduct') {
-                $cart->deductProduct($item['id'], $item['quantity']);
-            } else {
-                $cart->removeProduct($item['id']);
+            try {
+                if ($attributes['operation'] === 'add') {
+                    $cart->addProduct($item['id'], $item['quantity']);
+                } elseif ($attributes['operation'] === 'deduct') {
+                    $cart->deductProduct($item['id'], $item['quantity']);
+                } else {
+                    $cart->removeProduct($item['id']);
+                }
+            } catch (\Exception $e) {
+                return redirect()->back()->with('error', $e->getMessage());
             }
         }
 

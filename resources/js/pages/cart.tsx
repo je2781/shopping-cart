@@ -3,6 +3,8 @@ import HeaderCartButton from "@/components/header/header-cart-button";
 import { login, logout, register } from "@/routes";
 import { SharedData } from "@/types";
 import { Head, Link, router, usePage } from "@inertiajs/react";
+import { useEffect } from "react";
+import toast from "react-hot-toast";
 import { route } from "ziggy-js";
 
 
@@ -11,7 +13,11 @@ export default function Cart({
 }: {
     canRegister?: boolean;
 }) {
-    const { auth, cart } = usePage<SharedData>().props;
+    const { auth, cart, flash } = usePage<SharedData>().props;
+
+    useEffect(() => {
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
 
     return(
         <>
@@ -31,7 +37,9 @@ export default function Cart({
                                 <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => {}} />   
                                 <button
                                     onClick={() =>{
-                                        router.post(route('logout'));
+                                        router.post('/logout', {}, {
+                                            preserveState: false,
+                                        });
                                     }}
                                     className="cursor-pointer inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >

@@ -46,7 +46,7 @@ class Cart extends Model
                 throw new \Exception('Product not found');
             }
 
-            if ($product->stock_quantity < $quantity) {
+            if ($product->stock_quantity <= $quantity) {
                 throw new \Exception('Not enough stock available');
             }
 

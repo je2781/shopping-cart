@@ -63,6 +63,12 @@ export type Order = {
     items: OrderItem[];
 };
 
+interface FlashProps {
+  success?: string;
+  error?: string;
+  [key: string]: any;
+}
+
 export interface SharedData {
     name: string;
     quote: { message: string; author: string };
@@ -71,4 +77,5 @@ export interface SharedData {
     cart: Cart | null;
     order: Order | null;
     [key: string]: unknown;
+    flash?: FlashProps
 }

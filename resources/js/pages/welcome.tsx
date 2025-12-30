@@ -6,6 +6,7 @@ import { Head, Link, useForm, usePage,router } from '@inertiajs/react';
 import React, { useState } from 'react';
 import HeaderCartButton from '@/components/header/header-cart-button';
 import { route } from 'ziggy-js';
+import toast from 'react-hot-toast';
 
 type CartItem = {
     id: number;
@@ -19,10 +20,11 @@ export default function Welcome({
     products: any[];
     canRegister?: boolean;
 }) {
-    const { auth, cart } = usePage<SharedData>().props;
+    const { auth, cart, flash } = usePage<SharedData>().props;
     const [quantities, setQuantities] = useState<Record<number, number>>(
         Object.fromEntries(products.map((product) => [product.id, 1]))
     );
+    const _isInit = React.useRef(true);
     
     const { data, setData } = useForm<{
         items: CartItem[];
@@ -30,6 +32,10 @@ export default function Welcome({
     }>({
         items: cart?.items ?? [],
     });
+
+    React.useEffect(() => {
+        if (flash?.error) toast.error(flash.error);
+    }, [flash]);
     
 
     const debouncedSubmit = React.useMemo(
@@ -37,8 +43,7 @@ export default function Welcome({
             debounce(() => {
                 router.post('/cart', data, {
                     preserveScroll: true,
-                    preserveState: true,
-                    
+                    preserveState: false,
                 });
 
             }, 300),
@@ -47,12 +52,18 @@ export default function Welcome({
 
 
     React.useEffect(() => {
+        if (_isInit.current) return;
+
         debouncedSubmit();
         
         return () => {
             debouncedSubmit.cancel();
         };
     }, [data.items]);
+
+    React.useEffect(() => {
+        _isInit.current = false;
+    }, []);
 
 
 
@@ -107,10 +118,18 @@ export default function Welcome({
                
                         {auth.user ? (
                             <>
-                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => router.visit(route('cart.index'))} />
+                                <HeaderCartButton 
+                                    noOfCartItems={cart?.count ?? 0} 
+                                    onClick={() => {
+                                        debouncedSubmit.cancel(); // Cancel any pending debounced submits
+                                        router.visit('/cart');    // ✅ now navigation works
+                                    }}
+                                />
                                 <button
                                     onClick={() =>{
-                                        router.post(route('logout'));
+                                        router.post('/logout', {}, {
+                                            preserveState: false,
+                                        });
                                     }}
                                     className="cursor-pointer inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
