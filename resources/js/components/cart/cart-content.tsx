@@ -22,7 +22,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
 
     
     const [quantities, setQuantities] = useState<Record<number, number>>(
-      Object.fromEntries(cartItems.map((item) => [item.id, 1]))
+      Object.fromEntries(cartItems.map((item) => [item.id, item.quantity]))
     );
 
     const [itemTotalAmounts, setItemTotalAmounts] = useState<Record<number, number>>(
@@ -43,23 +43,6 @@ export default function CartComponent({ total, cartItems }: { total: number, car
         []
     );
 
-
-    
-    useEffect(() => {
-      if (_isInit.current) return;
-      
-      setQuantities(
-        Object.fromEntries(cartItems.map(i => [i.id, i.quantity]))
-      );
-
-      setItemTotalAmounts(
-        Object.fromEntries(
-          cartItems.map(i => [i.id, i.quantity * i.price])
-        )
-      );
-
-      setTotalAmount(total);
-    }, [cartItems, total]);
 
     useEffect(() => {
       if (_isInit.current) return;
@@ -119,6 +102,11 @@ export default function CartComponent({ total, cartItems }: { total: number, car
         ...t,
         [product.id]: safeQty * product.price,
       }));
+
+      setTotalAmount(Object.values({
+        ...itemTotalAmounts,
+        [product.id]: safeQty * product.price,
+      }).reduce((acc, val) => acc + val, 0));
 
       // Debounced form sync
       syncQuantity(product.id, safeQty, operation);
@@ -183,7 +171,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
             )}
             {data.cartItems.map(
               (item: CartItem, i: number) =>
-                quantities[i]! > 0 && (
+                quantities[item.id]! > 0 && (
                   <section
                     key={i}
                     className="border-[0.7px] border-gray-300 border-l-0 border-r-0 border-t-0 w-full py-7"

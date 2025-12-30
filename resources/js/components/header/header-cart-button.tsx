@@ -26,7 +26,7 @@ const HeaderCartButton = ({
 
         {noOfCartItems > 0 && (
         <span
-            className={`absolute right-[1.5px] top-0 rounded-full bg-black px-[6px] py-[2px] text-[0.6rem] font-bold text-white
+            className={`absolute -right-1 -top-1 rounded-full bg-black px-[6px] py-[2px] text-[0.6rem] font-bold text-white
             transition-transform duration-200
             ${animate ? "scale-125" : "scale-100"}`}
         >

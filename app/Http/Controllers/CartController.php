@@ -46,28 +46,8 @@ class CartController extends Controller
 
     public function index()
     {
-        $cart = Cart::where('user_id', Auth::id())->with('items.product')->first();
-
-        $cartItems = [];
-
-        if( $cart ) {
-            $cartItems = $cart->items->map(function ($item) {
-                $product = $item->product;
-                return [
-                    'id' => (int) $item->product_id,
-                    'name' => (string) $product->name,
-                    'price' => (float) $product->price,
-                    'imageUrl' => (string) $product->image_path,
-                    'stock' => (int) $product->stock_quantity,
-                    'quantity' => (int) $item->quantity,
-                ];
-            })->toArray();
-        }
-
         return Inertia::render('cart', [
             'canRegister' => Features::enabled(Features::registration()),
-            'cartItems' => $cartItems,
-            'total' => $cart->recalculateTotals(),
         ]);
     }
 }

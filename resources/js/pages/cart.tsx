@@ -2,16 +2,13 @@ import CartComponent from "@/components/cart/cart-content";
 import HeaderCartButton from "@/components/header/header-cart-button";
 import { login, logout, register } from "@/routes";
 import { SharedData } from "@/types";
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
+import { route } from "ziggy-js";
 
 
 export default function CartPage({
-    canRegister = true,
-    cartItems,
-    total
+    canRegister = true
 }: {
-    cartItems: any[];
-    total: number;
     canRegister?: boolean;
 }) {
     const { auth, cart } = usePage<SharedData>().props;
@@ -32,12 +29,16 @@ export default function CartPage({
                             <>
                             
                                 <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => {}} />   
-                                <Link
-                                    href={logout()}
+                                <button
+                                    onClick={() =>{
+                                        router.post('/logout', {}, {
+                                            onFinish: () => window.location.href = '/login', // ensures SPA redirect
+                                        });
+                                    }}
                                     className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log out
-                                </Link>
+                                </button>
                             </>
                         ) : (
                             <>
@@ -59,7 +60,7 @@ export default function CartPage({
                         )}
                     </nav>
                 </header>
-                <CartComponent total={total} cartItems={cartItems} />        
+                <CartComponent total={cart?.total ?? 0} cartItems={cart?.items ?? []} />        
             </div>
         </>
     );

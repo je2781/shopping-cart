@@ -3,7 +3,8 @@ import { MinusCircle, PlusCircle } from 'lucide-react';
 import debounce from 'lodash.debounce';
 import { type SharedData } from '@/types';
 import { Head, Link, useForm, usePage,router } from '@inertiajs/react';
-import React from 'react';
+import React, { useState } from 'react';
+import {route } from 'ziggy-js';
 import HeaderCartButton from '@/components/header/header-cart-button';
 
 type CartItem = {
@@ -19,7 +20,9 @@ export default function Welcome({
     canRegister?: boolean;
 }) {
     const { auth, cart } = usePage<SharedData>().props;
-
+    const [quantities, setQuantities] = useState<Record<number, number>>(
+        Object.fromEntries(products.map((product) => [product.id, 1]))
+    );
     
     const { data, setData } = useForm<{
         items: CartItem[];
@@ -52,18 +55,14 @@ export default function Welcome({
     }, [data.items]);
 
 
-    const getQuantity = (productId: number) => {
-        return data.items.find(i => i.id === productId)?.quantity ?? 1;
-    };
 
     const updateQuantity = (productId: number, quantity: number) => {
-        setData(prev => ({
-            ...prev,
-            items:  prev.items.map(i =>
-                i.id === productId ? { ...i, quantity } : i
-            ),
-            operation: 'add',
-        }));
+
+      // Instant UI update
+      setQuantities(q => ({
+        ...q,
+        [productId]: quantity,
+      }));
     };
 
     const addToCart = (productId: number, stock: number, quantity = 1) => {
@@ -75,8 +74,8 @@ export default function Welcome({
                 return {
                     ...prev,
                     items: prev.items.map(i =>
-                        i.id === productId && i.quantity + quantity <= stock
-                            ? { ...i, quantity: i.quantity + quantity }
+                        i.id === productId && quantity < stock
+                            ? { ...i, quantity }
                             : i
                     ),
                     operation: 'add',
@@ -108,15 +107,17 @@ export default function Welcome({
                
                         {auth.user ? (
                             <>
-                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => {
-                                    router.visit('/cart');
-                                }} />
-                                <Link
-                                    href={logout()}
+                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => router.get('/cart')} />
+                                <button
+                                    onClick={() =>{
+                                        router.post('/logout', {}, {
+                                            onFinish: () => window.location.href = '/login', // ensures SPA redirect
+                                        });
+                                    }}
                                     className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log out
-                                </Link>
+                                </button>
                             </>
                         ) : (
                             <>
@@ -170,10 +171,8 @@ export default function Welcome({
                                                 <div className='flex w-full flex-row gap-3 items-center'>
                                                     <MinusCircle       
                                                         onClick={() => {
-                                                            const qty = getQuantity(product.id);
-                                                            if (qty > 1) {
-                                                                updateQuantity(product.id, qty - 1);
-                                                            }
+                                                            updateQuantity(product.id, Math.max(1, quantities[product.id] - 1));
+                                                            
                                                         }}
                                                         className="h-6 w-6 text-gray-500 hover:text-gray-700 cursor-pointer" 
                                                     />
@@ -203,14 +202,12 @@ export default function Welcome({
                                                         className=" bg-transparent w-16
                                                             text-lg font-sans text-gray-600 focus:outline-none text-center
                                                             px-2"
-                                                        value={getQuantity(product.id)}
+                                                        value={quantities[product.id]}
                                                     />
                                                     <PlusCircle 
                                                         onClick={() => {
-                                                            const qty = getQuantity(product.id);
-                                                            if (qty < product.stock) {
-                                                                updateQuantity(product.id, qty + 1);
-                                                            }
+                                                            updateQuantity(product.id, Math.min(product.stock, quantities[product.id] + 1)  );
+                                                            
                                                         }}
                                                         className="h-6 w-6 text-gray-500 hover:text-gray-700 cursor-pointer" 
                                                     />
@@ -220,7 +217,10 @@ export default function Welcome({
                                                         product.stock === 0
                                                     }
                                                     onClick={() => {
-                                                        const qty = getQuantity(product.id);
+                                                        if(data.items.some((item) => item.id === product.id)){
+                                                            return;
+                                                        }
+                                                        const qty = quantities[product.id];
                                                         addToCart(product.id, product.stock, qty);
                                                     }}  
                                                     className={`${

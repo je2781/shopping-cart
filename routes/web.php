@@ -13,7 +13,7 @@ Route::middleware(['auth', 'verified'])->get('/', [ProductController::class, 'in
 Route::middleware(['auth'])->post('/cart', [CartController::class, 'store'])
 ->name('cart.store');
 Route::get('/cart', [CartController::class, 'index'])
-    ->name('cart.index');
+    ->name('cart');
 Route::middleware(['auth'])->post('/checkout', [OrderController::class, 'store'])
 ->name('order.store');
 

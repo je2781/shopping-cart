@@ -21,7 +21,6 @@ services:
       - ./package.json:/var/www/package.json
       - ./package-lock.json:/var/www/package-lock.json
       - ./config:/var/www/config
-      - ./public:/var/www/public
       - ./storage:/var/www/storage
     depends_on:
       - admin_db
