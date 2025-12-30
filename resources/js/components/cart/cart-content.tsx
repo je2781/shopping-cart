@@ -4,6 +4,8 @@ import "./cart.css";
 import { router, useForm } from "@inertiajs/react";
 import { debounce, set } from "lodash-es";
 import { CartItem, OrderItem } from "@/types";
+import { Trash2Icon } from "lucide-react";
+import { route } from "ziggy-js";
 
 export default function CartComponent({ total, cartItems }: { total: number, cartItems: CartItem[] }) {
     const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
@@ -59,7 +61,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
     useEffect(() => {
       if (_isInit.current) return;
 
-        router.post('/checkout', {
+        router.post(route('order.store'), {
           items: data.orderItems,
           total: totalAmount
         }, {
@@ -212,10 +214,13 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                           >
                             <div className="flex flex-row gap-x-7 text-gray-600 border border-gray-600 px-5 py-2 w-36 h-12 items-center">
                               <button
-                                onClick={() =>
-                                  updateQuantity(item, 'deduct', quantities[item.id] - 1)
+                                onClick={() => {
+                                  const qnt = quantities[item.id] - 1;
 
-                                }
+                                  if(qnt > 0){
+                                    updateQuantity(item, 'deduct', qnt);
+                                  }
+                                }}
                                 className={`text-lg font-sans text-gray-600 font-semibold ${
                                   loader
                                     ? "cursor-not-allowed"
@@ -233,9 +238,12 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                                     : "cursor-pointer"
                                 }`}
                                 disabled={loader}
-                                onClick={() =>
-                                  updateQuantity(item, 'add', quantities[item.id] + 1)
-                                }
+                                onClick={() => {
+                                  const qnt = quantities[item.id] + 1;
+                                  if(qnt <= item.stock){
+                                    updateQuantity(item, 'add', qnt);
+                                  }
+                                }}
                               >
                                 +
                               </button>
@@ -254,7 +262,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                                 );
 
                                 const v = Number(e.currentTarget.value);
-                                if (!Number.isInteger(v)) return;
+                                if (!Number.isInteger(v) || v < 1) return;
                                 const operation = v > quantities[item.id] ? 'add' : 'deduct';
                                 updateQuantity(item, operation, v);
                               }}
@@ -275,7 +283,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                               }}
                               onInput={(e) => {
                                 const v = Number(e.currentTarget.value);
-                                if (!Number.isInteger(v)) return;
+                                if (!Number.isInteger(v) || v < 1) return;
 
                                 const operation = v > quantities[item.id] ? 'add' : 'deduct';
                                 updateQuantity(item, operation, v);
@@ -286,10 +294,10 @@ export default function CartComponent({ total, cartItems }: { total: number, car
                               value={quantities[item.id]}
                             />
                           </div>
-                          <i
-                            className={`fa-solid fa-trash-can ${
+                          <Trash2Icon
+                            className={`w-5 h-5 ${
                               loader ? "cursor-not-allowed" : " cursor-pointer"
-                            } text-sm text-gray-600`}
+                            } text-gray-600`}
                             onClick={() => {
                               if (!loader) {
                                 //updating cart data in backend
@@ -297,7 +305,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
 
                               }
                             }}
-                          ></i>
+                          />
                         </div>
                         <h1 className="text-lg font-sans font-extralight hidden md:inline-block text-start">
                           &#8358;

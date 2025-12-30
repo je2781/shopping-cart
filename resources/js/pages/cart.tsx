@@ -6,7 +6,7 @@ import { Head, Link, router, usePage } from "@inertiajs/react";
 import { route } from "ziggy-js";
 
 
-export default function CartPage({
+export default function Cart({
     canRegister = true
 }: {
     canRegister?: boolean;
@@ -31,11 +31,9 @@ export default function CartPage({
                                 <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => {}} />   
                                 <button
                                     onClick={() =>{
-                                        router.post('/logout', {}, {
-                                            onFinish: () => window.location.href = '/login', // ensures SPA redirect
-                                        });
+                                        router.post(route('logout'));
                                     }}
-                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+                                    className="cursor-pointer inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log out
                                 </button>

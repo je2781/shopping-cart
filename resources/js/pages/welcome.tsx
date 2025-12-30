@@ -4,8 +4,8 @@ import debounce from 'lodash.debounce';
 import { type SharedData } from '@/types';
 import { Head, Link, useForm, usePage,router } from '@inertiajs/react';
 import React, { useState } from 'react';
-import {route } from 'ziggy-js';
 import HeaderCartButton from '@/components/header/header-cart-button';
+import { route } from 'ziggy-js';
 
 type CartItem = {
     id: number;
@@ -28,7 +28,7 @@ export default function Welcome({
         items: CartItem[];
         operation?: 'add' | 'remove';
     }>({
-        items: [],
+        items: cart?.items ?? [],
     });
     
 
@@ -107,14 +107,12 @@ export default function Welcome({
                
                         {auth.user ? (
                             <>
-                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => router.get('/cart')} />
+                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} onClick={() => router.visit(route('cart.index'))} />
                                 <button
                                     onClick={() =>{
-                                        router.post('/logout', {}, {
-                                            onFinish: () => window.location.href = '/login', // ensures SPA redirect
-                                        });
+                                        router.post(route('logout'));
                                     }}
-                                    className="inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+                                    className="cursor-pointer inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log out
                                 </button>
@@ -142,7 +140,7 @@ export default function Welcome({
         
                 <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
                     <main className="flex w-full max-w-[335px] flex-col-reverse lg:max-w-4xl lg:flex-row">
-                        <div className="flex-1 rounded-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-20 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
+                        <div className="flex-1 rounded-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-10 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
                             <div  className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
                                 <h2 className="text-2xl font-bold tracking-tight text-gray-900">Let's Shop</h2>
 
@@ -217,9 +215,7 @@ export default function Welcome({
                                                         product.stock === 0
                                                     }
                                                     onClick={() => {
-                                                        if(data.items.some((item) => item.id === product.id)){
-                                                            return;
-                                                        }
+                                                        if(data.items.some((item) => item.id === product.id))return;
                                                         const qty = quantities[product.id];
                                                         addToCart(product.id, product.stock, qty);
                                                     }}  
