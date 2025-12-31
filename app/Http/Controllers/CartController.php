@@ -16,36 +16,32 @@ class CartController extends Controller
     public function store(Request $request)
     {
         $attributes = $request->validate([
-            'items' => ['required', 'array'],
+            'operation' => ['required', 'in:add,deduct,remove'],
+
+            'items' => ['required_if:operation,add,deduct', 'array'],
             'items.*.id' => ['required', 'exists:products,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'operation' => ['in:add,deduct,remove'],
+
+            'id' => ['required_if:operation,remove', 'exists:products,id'],
         ]);
 
-        // retrive user cart or create new one
-        $cart = Cart::firstOrCreate(
-            ['user_id' => Auth::id()],
-        );
+        $cart = Cart::firstOrCreate([
+            'user_id' => Auth::id(),
+        ]);
 
-
-        foreach ($attributes['items'] as $item) {
-            try {
-                if ($attributes['operation'] === 'add') {
-                    $cart->addProduct($item['id'], $item['quantity']);
-                } elseif ($attributes['operation'] === 'deduct') {
-                    $cart->deductProduct($item['id'], $item['quantity']);
-                }else{
-                    $cart->removeProduct($item['id'], $item['quantity']);
-                }
-            } catch (\Exception $e) {
-                return redirect()->back()->with('error', $e->getMessage());
-            }
+        try {
+            match ($attributes['operation']) {
+                'remove' => $cart->removeProduct($attributes['id']),
+                'add' => collect($attributes['items'])
+                    ->each(fn ($item) => $cart->addProduct($item['id'], $item['quantity'])),
+                'deduct' => collect($attributes['items'])
+                    ->each(fn ($item) => $cart->deductProduct($item['id'], $item['quantity'])),
+            };
+        } catch (\Throwable $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-
-        return redirect()->back()->with('success', 'Cart updated!');
-
-
+        return back()->with('success', 'Cart updated!');
     }
 
 

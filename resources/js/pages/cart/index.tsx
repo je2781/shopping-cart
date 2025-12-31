@@ -1,23 +1,34 @@
 import CartContent from "@/components/cart-content/content";
 import HeaderCartButton from "@/components/header/header-cart-button";
 import { login, logout, register } from "@/routes";
-import { SharedData, type Cart } from "@/types";
-import { Head, Link, router, usePage } from "@inertiajs/react";
+import { CartItem, OrderItem, SharedData, type Cart } from "@/types";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 import { route } from "ziggy-js";
 
 
 export default function Cart({
+    
     canRegister = true,
 }: {
     canRegister?: boolean;
 }) {
-    const { auth,cart, flash } = usePage<SharedData>().props;
+    const { auth, cart, flash } = usePage<SharedData>().props;
 
     useEffect(() => {
         if (flash?.error) toast.error(flash.error);
     }, [flash]);
+
+    const { data, setData } = useForm<{
+        cartItems: CartItem[];
+        orderItems: OrderItem[];
+        operation?: 'add' | 'deduct' | 'remove';
+        id?: number
+        }>({
+        cartItems: cart?.items ?? [],
+        orderItems: [],
+    });
 
     return(
         <>
@@ -37,6 +48,7 @@ export default function Cart({
                                 <HeaderCartButton onClick={() => {}} noOfCartItems={cart?.count ?? 0} />   
                                 <button
                                     onClick={() => router.post(route('logout'))}
+                                    type='button'
                                     className="cursor-pointer inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log out
@@ -62,7 +74,7 @@ export default function Cart({
                         )}
                     </nav>
                 </header>
-                <CartContent total={cart?.total ?? 0} cartItems={cart?.items ?? []} />        
+                <CartContent total={cart?.total ?? 0} data={data} setData={setData} />        
             </div>
         </>
     );

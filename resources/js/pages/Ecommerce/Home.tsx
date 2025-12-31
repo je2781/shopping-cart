@@ -72,14 +72,9 @@ export default function Products({
 
             if (existingItemIndex !== -1) {
                 // Update quantity of existing item without exceeding stock
-                const newQuantity = Math.min(
-                    qty + updatedItems[existingItemIndex].quantity,
-                    product.stock
-                );
-
                 updatedItems[existingItemIndex] = {
                     ...updatedItems[existingItemIndex],
-                    quantity: newQuantity,
+                    quantity: Math.min(product.stock, qty),
                 };
 
                 return {
@@ -92,7 +87,7 @@ export default function Products({
             // Add new item, respecting stock
             return {
                 ...prev,
-                items: [...prev.items, { id: productId, quantity: Math.min(qty, product.stock) }],
+                items: [...prev.items, { id: productId, quantity: Math.min(product.stock, qty) }],
                 operation: 'add',
             };
         });
@@ -124,7 +119,8 @@ export default function Products({
                                 />
                                 <button
                                     onClick={() => router.post(route('logout'))}
-                                    className="cursor-pointer inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
+                                    type='button'
+                                    className="cursor-pointer z-50 pointer-events-auto inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log out
                                 </button>
@@ -152,8 +148,8 @@ export default function Products({
         
                 <div className="flex w-full items-center justify-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
                     <main className="flex w-full max-w-[335px] flex-col-reverse lg:max-w-4xl lg:flex-row">
-                        <div className="flex-1 rounded-lg bg-white p-6 pb-12 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-10 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
-                            <div  className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-24 lg:max-w-7xl lg:px-8">
+                        <div className="flex-1 rounded-lg bg-white p-4 text-[13px] leading-[20px] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] lg:rounded-tl-lg lg:rounded-br-none lg:p-8 dark:bg-[#161615] dark:text-[#EDEDEC] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d]">
+                            <div  className="mx-auto max-w-2xl px-4 py-16 sm:px-6 sm:py-12 lg:max-w-7xl lg:px-8">
                                 <h2 className="text-2xl font-bold tracking-tight text-gray-900">Let's Shop</h2>
 
                                 <div className="mt-6 grid grid-cols-1 gap-x-3 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-5">

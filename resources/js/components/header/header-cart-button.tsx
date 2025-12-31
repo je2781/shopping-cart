@@ -7,7 +7,7 @@ const HeaderCartButton = ({
   onClick
 }: {
   noOfCartItems: number;
-  onClick?: () => void;
+  onClick: () => void
 }) => {
   const [animate, setAnimate] = useState(false);
 
@@ -21,8 +21,8 @@ const HeaderCartButton = ({
   }, [noOfCartItems]);
 
   return (
-    <button  type="button" className="relative z-50 pointer-events-auto" onClick={onClick}>
-        <ShoppingCart className="pointer-events-none text-gray-600 text-xl" />
+    <button type="button" className="relative pointer-events-auto z-50 cursor-pointer" onClick={onClick}>
+        <ShoppingCart className="text-gray-600 text-xl pointer-events-none" />
 
         {noOfCartItems > 0 && (
         <span

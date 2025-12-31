@@ -47,6 +47,7 @@ class OrderController extends Controller
                  $user->cart->items()->delete();
                  $user->cart()->delete();
              }
+             
 
          });
 

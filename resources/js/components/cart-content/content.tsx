@@ -1,34 +1,36 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 
 import "./cart.css";
-import { router, useForm } from "@inertiajs/react";
+import { router, SetDataAction, useForm } from "@inertiajs/react";
 import { debounce, set } from "lodash-es";
 import { CartItem, OrderItem } from "@/types";
-import { Trash2Icon } from "lucide-react";
+import { ShoppingBagIcon, Trash2Icon } from "lucide-react";
 import { route } from "ziggy-js";
 import ecommerce from "@/routes/ecommerce";
 
-export default function CartContent({ total, cartItems }: { total: number, cartItems: CartItem[] }) {
-    const [totalAmount, setTotalAmount] = useState(total);
-    const [loader, setLoader] = useState(false);
-    const _isInit = useRef(true);
-
-    const { data, setData } = useForm<{
-        cartItems: CartItem[];
-        orderItems: OrderItem[];
-        operation?: 'add' | 'deduct' | 'remove';
-    }>({
-        cartItems,
-        orderItems: [],
-    });
+export default function CartContent({ total, data, setData }: { total: number, data: {
+    cartItems: CartItem[];
+    orderItems: OrderItem[];
+    operation?: "add" | "deduct" | "remove";
+    id?: number;
+}, setData: SetDataAction<{
+    cartItems: CartItem[];
+    orderItems: OrderItem[];
+    operation?: "add" | "deduct" | "remove";
+    id?: number;
+}> }) {
+  
+  const [totalAmount, setTotalAmount] = useState(total);
+  const [loader, setLoader] = useState(false);
+  const _isInit = useRef(true);
 
     
     const [quantities, setQuantities] = useState<Record<number, number>>(
-      Object.fromEntries(cartItems.map((item) => [item.id, item.quantity]))
+      Object.fromEntries(data.cartItems.map((item) => [item.id, item.quantity]))
     );
 
     const [itemTotalAmounts, setItemTotalAmounts] = useState<Record<number, number>>(
-      Object.fromEntries(cartItems.map(
+      Object.fromEntries(data.cartItems.map(
         (item) => [item.id, item.quantity * item.price]
       ))
     );
@@ -38,7 +40,7 @@ export default function CartContent({ total, cartItems }: { total: number, cartI
       if (_isInit.current) return;
 
       let timer = setTimeout(() => {
-        router.post('/cart', data,{
+        router.post(route('cart.store'), data,{
             preserveScroll: true,
             preserveState: true,
             onStart: () => setLoader(true),
@@ -56,7 +58,7 @@ export default function CartContent({ total, cartItems }: { total: number, cartI
     useEffect(() => {
       if (_isInit.current) return;
 
-      router.post('/checkout', {
+      router.post(route('order.store'), {
         items: data.orderItems,
         total: totalAmount
       }, {
@@ -77,16 +79,19 @@ export default function CartContent({ total, cartItems }: { total: number, cartI
     const syncQuantity = (productId: number, quantity: number, operation: 'add' | 'deduct' | 'remove') => {
       setData(prev => ({
           ...prev,
-          cartItems: prev.cartItems.map(i =>
+          cartItems: operation === 'remove'
+          ? prev.cartItems.filter(item => item.id !== productId)
+          : prev.cartItems.map(i =>
               i.id === productId ? { ...i, quantity } : i
           ),
-          operation
+          operation,
+          id: productId
       }));
 
     };
 
 
-    const updateQuantity = (product: CartItem, operation: 'add' | 'deduct' | 'remove', nextQty: number) => {
+    const updateQuantity = (product: CartItem, operation: 'add' | 'deduct' | 'remove', nextQty: number = 0) => {
 
       // Instant UI update
       setQuantities(q => {
@@ -157,7 +162,7 @@ export default function CartContent({ total, cartItems }: { total: number, cartI
     <>
       {totalAmount === 0 ? (
         <main className="min-h-screen w-full container mx-auto pl-2 pr-3 lg:pl-0 lg:pr-6 md:pt-12 pt-5 flex flex-col gap-y-5 justify-center items-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
-          <i className="fa-solid cursor-pointer fa-bag-shopping text-gray-600 text-3xl"></i>
+          <ShoppingBagIcon className="text-gray-600 w-10 h-10" />
           <h1 className="font-sans text-2xl italic">Cart is Empty!</h1>
           <button onClick={() => router.visit(ecommerce.home())} className="cursor-pointer bg-gray-700 text-[1rem] font-sans text-white px-7 py-3 hover:ring-2 ring-gray-700 border-0">
             Start shopping
@@ -235,9 +240,8 @@ export default function CartContent({ total, cartItems }: { total: number, cartI
                                 onClick={() => {
                                   const qnt = quantities[item.id] - 1;
 
-                                  if(qnt > 0){
-                                    updateQuantity(item, 'deduct', qnt);
-                                  }
+                                  updateQuantity(item, 'deduct', Math.max(1, qnt));
+                                  
                                 }}
                                 className={`text-lg font-sans text-gray-600 font-semibold ${
                                   loader
@@ -258,9 +262,8 @@ export default function CartContent({ total, cartItems }: { total: number, cartI
                                 disabled={loader}
                                 onClick={() => {
                                   const qnt = quantities[item.id] + 1;
-                                  if(qnt < item.stock){
-                                    updateQuantity(item, 'add', qnt);
-                                  }
+                                  updateQuantity(item, 'add', Math.min(item.stock, qnt));
+                                  
                                 }}
                               >
                                 +
@@ -319,7 +322,7 @@ export default function CartContent({ total, cartItems }: { total: number, cartI
                             onClick={() => {
                               if (!loader) {
                                 //updating cart data in backend
-                                updateQuantity(item, 'remove', quantities[item.id]);
+                                updateQuantity(item, 'remove');
 
                               }
                             }}

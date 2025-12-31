@@ -106,29 +106,28 @@ class Cart extends Model
         });
     }
 
-    public function removeProduct(int $productId, int $quantity): void
+    public function removeProduct(int $productId): void
     {
-        DB::transaction(function () use ($productId, $quantity) {
 
-            // Find the cart item
-            $cartItem = $this->items()->where('product_id', $productId)->first();
+        DB::transaction(function () use ($productId) {
+
+            $cartItem = $this->items()
+                ->where('product_id', $productId)
+                ->first();
 
             if (! $cartItem) {
-                // Product not in cart, nothing to do
                 return;
             }
 
-            // Remove product completely from cart
+            Product::where('id', $productId)
+                ->increment('stock_quantity', $cartItem->quantity);
+
             $cartItem->delete();
 
-            // Restore stock
-            $product = Product::find($productId);
-            if ($product) {
-                $product->increment('stock_quantity', $quantity);
-            }
 
         });
     }
+
 
 
     /**
