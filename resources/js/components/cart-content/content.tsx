@@ -71,6 +71,7 @@ export default function CartContent({ total, data, setData }: { total: number, d
         preserveState: true,
         onStart: () => setLoader(true),
         onFinish: () => setLoader(false),
+        onSuccess: (page: any) => setCount(Number(page.props.cart.count))
       });
     }, [data.orderItems]);
     
