@@ -69,7 +69,7 @@ class Cart extends Model
             $product->decrement('stock_quantity', $quantity);
 
             // Dispatch job when stock becomes 3 or less
-            if ($product->stock_quantity <= 3) {
+            if ((int) $product->stock_quantity <= 3) {
                 ProductStockLowJob::dispatch($product->id);
             }
 

@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable as FoundationQueueable;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use App\Mail\LowStockMail;
 
 class ProductStockLowJob implements ShouldQueue
 {
@@ -48,13 +49,8 @@ class ProductStockLowJob implements ShouldQueue
             return;
         }
 
-        Mail::raw(
-            "Stock is low for product: {$product->name}\n\nRemaining quantity: $product->stock_quantity",
-            function ($message) use ($admin) {
-                $message
-                    ->to($admin->email)
-                    ->subject('⚠️ Product Stock Low');
-            }
+        Mail::to($admin->email)->send(
+            new LowStockMail($product)
         );
     }
 }

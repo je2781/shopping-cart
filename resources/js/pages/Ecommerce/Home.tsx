@@ -24,8 +24,8 @@ export default function Products({
         items: {
             id: number;
             quantity: number;
+            operation?: 'add' | 'remove';
         }[];
-        operation?: 'add' | 'remove';
     }>({
         items: [],
     });
@@ -62,36 +62,26 @@ export default function Products({
       }));
     };
 
-    const addToCart = (productId: number, qty: number) => {
-        const product = products.find(p => p.id === productId);
-        if (!product) return; // safety check
-
+    const addToCart = (product: any, qty: number) => {
         setData(prev => {
-            const updatedItems = [...prev.items];
-            const existingItemIndex = updatedItems.findIndex(i => i.id === productId);
+            const newQty = Math.min(product.stock, qty);
 
-            if (existingItemIndex !== -1) {
-                // Update quantity of existing item without exceeding stock
-                updatedItems[existingItemIndex] = {
-                    ...updatedItems[existingItemIndex],
-                    quantity: Math.min(product.stock, qty),
-                };
+            const items = prev.items.some(i => i.id === product.id)
+                ? prev.items.map(i =>
+                    i.id === product.id
+                        ? { ...i, quantity: newQty } // update existing product
+                        : i // keep other products
+                ).filter(i => i.id === product.id)
+                : [...prev.items, { id: product.id, quantity: newQty }].filter(i => i.id === product.id); // add new product
 
-                return {
-                    ...prev,
-                    items: updatedItems,
-                    operation: 'add',
-                };
-            }
-
-            // Add new item, respecting stock
             return {
                 ...prev,
-                items: [...prev.items, { id: productId, quantity: Math.min(product.stock, qty) }],
+                items,
                 operation: 'add',
             };
         });
     };
+
 
 
 
@@ -225,7 +215,7 @@ export default function Products({
                                                     onClick={() => {
                                                         const qty = quantities[product.id];
 
-                                                        addToCart(product.id, qty);
+                                                        addToCart(product, qty);
                                                     }}  
                                                     className={`${
                                                         product.stock === 0

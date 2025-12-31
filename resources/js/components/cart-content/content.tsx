@@ -11,12 +11,10 @@ import ecommerce from "@/routes/ecommerce";
 export default function CartContent({ total, data, setData }: { total: number, data: {
     cartItems: CartItem[];
     orderItems: OrderItem[];
-    operation?: "add" | "deduct" | "remove";
     id?: number;
 }, setData: SetDataAction<{
     cartItems: CartItem[];
     orderItems: OrderItem[];
-    operation?: "add" | "deduct" | "remove";
     id?: number;
 }> }) {
   
@@ -79,11 +77,11 @@ export default function CartContent({ total, data, setData }: { total: number, d
     const syncQuantity = (productId: number, quantity: number, operation: 'add' | 'deduct' | 'remove') => {
       setData(prev => ({
           ...prev,
-          cartItems: operation === 'remove'
+          cartItems:operation === 'remove'
           ? prev.cartItems.filter(item => item.id !== productId)
           : prev.cartItems.map(i =>
               i.id === productId ? { ...i, quantity } : i
-          ),
+          ).filter(i => i.id === productId),
           operation,
           id: productId
       }));
