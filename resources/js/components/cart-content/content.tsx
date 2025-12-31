@@ -222,13 +222,17 @@ export default function CartContent({ total, data, setData }: { total: number, d
                             height={175}
                             alt={`cart-item${i + 1}`}
                           />
-                          <div className="font-sans inline-block">
-                            <h2 className="text-[1rem] font-normal">
-                              {item.name}
-                            </h2>
-                            <p className="text-sm font-extralight">
-                              &#36;{item.price}
-                            </p>
+                          <div className="font-sans block space-y-3 text-start">
+                            <div className="block">
+                                <h2 className="text-[1rem] font-normal">
+                                  {item.name}
+                                </h2>
+                                <p className="text-sm font-extralight">
+                                  &#36;{item.price}
+                                </p>
+                            </div>
+                            <span className={`${item.stock > 0 ? 'bg-green-500' : 'bg-red-500'} rounded-full text-xs text-white py-1 px-3`}>{item.stock} in stock</span>
+
                           </div>
                         </div>
                         <h1 className="text-lg font-sans font-extralight md:hidden">
