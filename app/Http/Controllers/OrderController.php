@@ -53,6 +53,6 @@ class OrderController extends Controller
 
 
 
-        return redirect()->route('home')->with('success', 'Order placed successfully!');
+        return redirect()->route('ecommerce.home')->with('success', 'Order placed successfully!');
     }
 }
