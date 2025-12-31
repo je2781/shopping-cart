@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 
 const HeaderCartButton = ({
   noOfCartItems,
+  onClick
 }: {
   noOfCartItems: number;
+  onClick?: () => void;
 }) => {
   const [animate, setAnimate] = useState(false);
 
@@ -19,8 +21,8 @@ const HeaderCartButton = ({
   }, [noOfCartItems]);
 
   return (
-    <span className="relative">
-        <ShoppingCart className="text-gray-600 text-xl cursor-pointer transition-transform hover:scale-125" />
+    <button  type="button" className="relative z-50 pointer-events-auto" onClick={onClick}>
+        <ShoppingCart className="pointer-events-none text-gray-600 text-xl" />
 
         {noOfCartItems > 0 && (
         <span
@@ -31,7 +33,7 @@ const HeaderCartButton = ({
             {noOfCartItems}
         </span>
         )}
-    </span>
+    </button>
   );
 };
 

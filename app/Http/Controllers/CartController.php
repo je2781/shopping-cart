@@ -51,7 +51,8 @@ class CartController extends Controller
 
     public function index()
     {
-        return Inertia::render('cart/index', [
+        
+        return Inertia::render('Cart/Index', [
             'canRegister' => Features::enabled(Features::registration()),
         ]);
     }

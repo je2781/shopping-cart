@@ -24,7 +24,7 @@ class ProductController extends Controller
             'description' => (string) $product->description,
         ])->toArray();
         
-        return Inertia::render('welcome', [
+        return Inertia::render('Ecommerce/Home', [
             'canRegister' => Features::enabled(Features::registration()),
             'products' => $products,
         ]);

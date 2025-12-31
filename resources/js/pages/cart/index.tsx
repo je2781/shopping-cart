@@ -1,7 +1,7 @@
-import CartComponent from "@/components/cart/cart-content";
+import CartContent from "@/components/cart-content/content";
 import HeaderCartButton from "@/components/header/header-cart-button";
 import { login, logout, register } from "@/routes";
-import { SharedData } from "@/types";
+import { SharedData, type Cart } from "@/types";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
@@ -9,11 +9,11 @@ import { route } from "ziggy-js";
 
 
 export default function Cart({
-    canRegister = true
+    canRegister = true,
 }: {
     canRegister?: boolean;
 }) {
-    const { auth, cart, flash } = usePage<SharedData>().props;
+    const { auth,cart, flash } = usePage<SharedData>().props;
 
     useEffect(() => {
         if (flash?.error) toast.error(flash.error);
@@ -29,18 +29,18 @@ export default function Cart({
                 />
             </Head>
             <div className="flex min-h-screen flex-col items-center bg-[#FDFDFC] p-4 text-[#1b1b18] lg:justify-center lg:py-8 px-4 dark:bg-[#0a0a0a]">
-                <header className="mb-6 w-full max-w-6xl text-sm not-has-[nav]:hidden">
+                <header className="mb-6 w-full max-w-6xl text-sm">
                     <nav className="flex items-center justify-end gap-4">
                         {auth.user ? (
                             <>
                             
-                                <HeaderCartButton noOfCartItems={cart?.count ?? 0} />   
-                                <Link
-                                    href="/logout" method="post" as="button"
+                                <HeaderCartButton onClick={() => {}} noOfCartItems={cart?.count ?? 0} />   
+                                <button
+                                    onClick={() => router.post(route('logout'))}
                                     className="cursor-pointer inline-block rounded-sm border border-transparent px-5 py-1.5 text-sm leading-normal text-[#1b1b18] hover:border-[#19140035] dark:text-[#EDEDEC] dark:hover:border-[#3E3E3A]"
                                 >
                                     Log out
-                                </Link>
+                                </button>
                             </>
                         ) : (
                             <>
@@ -62,7 +62,7 @@ export default function Cart({
                         )}
                     </nav>
                 </header>
-                <CartComponent total={cart?.total ?? 0} cartItems={cart?.items ?? []} />        
+                <CartContent total={cart?.total ?? 0} cartItems={cart?.items ?? []} />        
             </div>
         </>
     );

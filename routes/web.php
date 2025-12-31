@@ -10,15 +10,15 @@ use Laravel\Fortify\Features;
 
 
 
-Route::get('cart', [CartController::class, 'index'])
+Route::middleware('auth')->get('/cart', [CartController::class, 'index'])
 ->name('cart.index');
-Route::middleware('auth')->get('/', [ProductController::class, 'index'])->name('home');
+Route::middleware('auth')->get('/', [ProductController::class, 'index'])->name('ecommerce.home');
 Route::middleware('auth')->post('/cart', [CartController::class, 'store'])
 ->name('cart.store');
 Route::middleware('auth')->post('/checkout', [OrderController::class, 'store'])
 ->name('order.store');
 
-Route::post('logout', function () {
+Route::post('/logout', function () {
     Auth::logout();
 
     return redirect('/login');

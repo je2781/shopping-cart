@@ -6,9 +6,9 @@ import { debounce, set } from "lodash-es";
 import { CartItem, OrderItem } from "@/types";
 import { Trash2Icon } from "lucide-react";
 import { route } from "ziggy-js";
-import { home } from "@/routes";
+import ecommerce from "@/routes/ecommerce";
 
-export default function CartComponent({ total, cartItems }: { total: number, cartItems: CartItem[] }) {
+export default function CartContent({ total, cartItems }: { total: number, cartItems: CartItem[] }) {
     const [totalAmount, setTotalAmount] = useState(total);
     const [loader, setLoader] = useState(false);
     const _isInit = useRef(true);
@@ -159,7 +159,7 @@ export default function CartComponent({ total, cartItems }: { total: number, car
         <main className="min-h-screen w-full container mx-auto pl-2 pr-3 lg:pl-0 lg:pr-6 md:pt-12 pt-5 flex flex-col gap-y-5 justify-center items-center opacity-100 transition-opacity duration-750 lg:grow starting:opacity-0">
           <i className="fa-solid cursor-pointer fa-bag-shopping text-gray-600 text-3xl"></i>
           <h1 className="font-sans text-2xl italic">Cart is Empty!</h1>
-          <button onClick={() => router.visit(home())} className="cursor-pointer bg-gray-700 text-[1rem] font-sans text-white px-7 py-3 hover:ring-2 ring-gray-700 border-0">
+          <button onClick={() => router.visit(ecommerce.home())} className="cursor-pointer bg-gray-700 text-[1rem] font-sans text-white px-7 py-3 hover:ring-2 ring-gray-700 border-0">
             Start shopping
           </button>
         </main>
