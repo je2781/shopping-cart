@@ -227,12 +227,12 @@ export default function CartContent({ total, data, setData }: { total: number, d
                               {item.name}
                             </h2>
                             <p className="text-sm font-extralight">
-                              &#8358;{item.price}
+                              &#36;{item.price}
                             </p>
                           </div>
                         </div>
                         <h1 className="text-lg font-sans font-extralight md:hidden">
-                          &#8358;
+                          &#36;
                           {parseFloat(
                             itemTotalAmounts[item.id].toFixed(2)
                           ).toLocaleString("en-US")}
@@ -337,7 +337,7 @@ export default function CartContent({ total, data, setData }: { total: number, d
                           />
                         </div>
                         <h1 className="text-lg font-sans font-extralight hidden md:inline-block text-start">
-                          &#8358;
+                          &#36;
                           {parseFloat(
                             itemTotalAmounts[item.id].toFixed(2)
                           ).toLocaleString("en-US")}
@@ -353,7 +353,7 @@ export default function CartContent({ total, data, setData }: { total: number, d
               <p className="md:text-[1rem] text-xs font-extralight">
                 SUBTOTAL&nbsp;&nbsp;&nbsp;
                 <span className="md:text-2xl text-xl font-normal">
-                  &#8358;{totalAmount.toLocaleString("en-US")}
+                  &#36;{totalAmount.toLocaleString("en-US")}
                 </span>
               </p>
               <p className="italic md:text-[1rem] text-xs font-light underline underline-offset-1 cursor-pointer">
