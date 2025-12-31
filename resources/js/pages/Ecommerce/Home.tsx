@@ -73,16 +73,17 @@ export default function Products({
     };
 
     const addToCart = (product: any, qty: number) => {
+        const newQty = Math.min(product.stock, qty);
 
         setData(prev => {
 
             const items = prev.items.some(i => i.id === product.id)
                 ? prev.items.map(i =>
                     i.id === product.id
-                        ? { ...i, quantity: qty } // update existing product
+                        ? { ...i, quantity: newQty } // update existing product
                         : i // keep other products
                 )
-                : [...prev.items, { id: product.id, quantity: qty }]; // add new product
+                : [...prev.items, { id: product.id, quantity: newQty }]; // add new product
 
             return {
                 ...prev,
@@ -94,7 +95,7 @@ export default function Products({
         setSelectedProductId(product.id);
 
         //instant UI update
-        updateQuantity(product.id, qty);
+        updateQuantity(product.id, newQty);
     };
 
 
@@ -161,7 +162,7 @@ export default function Products({
                                     {products.map((product: any, i: number, list: any[]) => (
                                         <div key={i} className="group">
                                             <div className="aspect-h-1 aspect-w-1 relative w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-auto lg:h-80 group-hover:opacity-75">
-                                                <span className={`${product.stock > 0 ? 'bg-green-500' : 'bg-red-500'} absolute bottom-2 left-2 rounded-full text-xs text-white py-1 px-3`}>{product.stock} in stock</span>
+                                                <span className={`${(cart?.items.find(i => i.id === product.id)?.stock ?? product.stock) > 0 ? 'bg-green-500' : 'bg-red-500'} absolute bottom-2 left-2 rounded-full text-xs text-white py-1 px-3`}>{product.stock} in stock</span>
                                                 <img
                                                     src={product.imageUrl}
                                                     alt={product.id}
