@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { initializeTheme } from './hooks/use-appearance';
 import { Toaster } from 'react-hot-toast';
+import { CartProvider } from './store/cart-context';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -21,13 +22,15 @@ createInertiaApp({
 
         root.render(
             <StrictMode>
-                <Toaster
-                    position="top-right"
-                    toastOptions={{
-                    duration: 4000,
-                    }}
-                />
-                <App {...props} />
+                <CartProvider> {/* 👈 provider here */}
+                    <Toaster
+                        position="top-right"
+                        toastOptions={{
+                            duration: 4000,
+                        }}
+                    />
+                    <App {...props} />
+                </CartProvider>
             </StrictMode>,
         );
     },

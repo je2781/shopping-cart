@@ -45,7 +45,7 @@ export default function Cart({
                         {auth.user ? (
                             <>
                             
-                                <HeaderCartButton onClick={() => {}} noOfCartItems={cart?.count ?? 0} />   
+                                <HeaderCartButton onClick={() => {}} />   
                                 <button
                                     onClick={() => router.post(route('logout'))}
                                     type='button'

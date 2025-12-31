@@ -7,6 +7,7 @@ import { CartItem, OrderItem } from "@/types";
 import { ShoppingBagIcon, Trash2Icon } from "lucide-react";
 import { route } from "ziggy-js";
 import ecommerce from "@/routes/ecommerce";
+import { useCart } from "@/store/cart-context";
 
 export default function CartContent({ total, data, setData }: { total: number, data: {
     cartItems: CartItem[];
@@ -20,7 +21,9 @@ export default function CartContent({ total, data, setData }: { total: number, d
   
   const [totalAmount, setTotalAmount] = useState(total);
   const [loader, setLoader] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState(0);
   const _isInit = useRef(true);
+  const {setCount} = useCart();
 
     
     const [quantities, setQuantities] = useState<Record<number, number>>(
@@ -38,11 +41,15 @@ export default function CartContent({ total, data, setData }: { total: number, d
       if (_isInit.current) return;
 
       let timer = setTimeout(() => {
-        router.post(route('cart.store'), data,{
+        router.post(route('cart.store'), {
+          ...data,
+          cartItems: data.cartItems.filter(i => i.id === selectedProductId)
+        },{
             preserveScroll: true,
             preserveState: true,
             onStart: () => setLoader(true),
             onFinish: () => setLoader(false),
+            onSuccess: (page: any) => setCount(Number(page.props.cart.count))
           });
       }, 200);
       
@@ -81,10 +88,12 @@ export default function CartContent({ total, data, setData }: { total: number, d
           ? prev.cartItems.filter(item => item.id !== productId)
           : prev.cartItems.map(i =>
               i.id === productId ? { ...i, quantity } : i
-          ).filter(i => i.id === productId),
+          ),
           operation,
           id: productId
       }));
+
+      setSelectedProductId(productId);
 
     };
 

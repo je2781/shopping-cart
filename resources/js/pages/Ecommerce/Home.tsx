@@ -1,10 +1,11 @@
 import { MinusCircle, PlusCircle } from 'lucide-react';
-import { type SharedData } from '@/types';
+import { Cart, type SharedData } from '@/types';
 import { Head, Link, useForm, usePage,router } from '@inertiajs/react';
 import React, { useRef, useState } from 'react';
 import HeaderCartButton from '@/components/header/header-cart-button';
 import toast from 'react-hot-toast';
 import { route } from 'ziggy-js';
+import { useCart } from '@/store/cart-context';
 
 
 export default function Products({
@@ -19,6 +20,8 @@ export default function Products({
         Object.fromEntries(products.map((product) => [product.id, 1]))
     );
     const _isInit = useRef(true);
+    const [selectedProductId, setSelectedProductId] = useState(0);
+    const {setCount} = useCart();
     
     const { data, setData } = useForm<{
         items: {
@@ -35,9 +38,16 @@ export default function Products({
         if (_isInit.current) return;
 
         let timer = setTimeout(() => {
-            router.post(route('cart.store'), data, {
+            router.post(route('cart.store'), {
+                ...data,
+                items: data.items.filter(i => i.id === selectedProductId)
+            }, {
                 preserveScroll: true,
                 preserveState: true,
+                onSuccess: (page: any) => {
+                    setCount(Number(page.props.cart.count));
+
+                }
             });
         }, 200);
 
@@ -63,16 +73,16 @@ export default function Products({
     };
 
     const addToCart = (product: any, qty: number) => {
+
         setData(prev => {
-            const newQty = Math.min(product.stock, qty);
 
             const items = prev.items.some(i => i.id === product.id)
                 ? prev.items.map(i =>
                     i.id === product.id
-                        ? { ...i, quantity: newQty } // update existing product
+                        ? { ...i, quantity: qty } // update existing product
                         : i // keep other products
-                ).filter(i => i.id === product.id)
-                : [...prev.items, { id: product.id, quantity: newQty }].filter(i => i.id === product.id); // add new product
+                )
+                : [...prev.items, { id: product.id, quantity: qty }]; // add new product
 
             return {
                 ...prev,
@@ -80,6 +90,11 @@ export default function Products({
                 operation: 'add',
             };
         });
+
+        setSelectedProductId(product.id);
+
+        //instant UI update
+        updateQuantity(product.id, qty);
     };
 
 
@@ -102,7 +117,6 @@ export default function Products({
                         {auth.user ? (
                             <>
                                 <HeaderCartButton 
-                                    noOfCartItems={cart?.count ?? 0} 
                                     onClick={() => {
                                         router.get(route('cart.index'));
                                     }}
@@ -145,7 +159,7 @@ export default function Products({
                                 <div className="mt-6 grid grid-cols-1 gap-x-3 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-5">
                                     {/* Product cards go here */}
                                     {products.map((product: any, i: number, list: any[]) => (
-                                        <div key={product.id} className="group">
+                                        <div key={i} className="group">
                                             <div className="aspect-h-1 aspect-w-1 relative w-full overflow-hidden rounded-md bg-gray-200 lg:aspect-auto lg:h-80 group-hover:opacity-75">
                                                 <span className={`${product.stock > 0 ? 'bg-green-500' : 'bg-red-500'} absolute bottom-2 left-2 rounded-full text-xs text-white py-1 px-3`}>{product.stock} in stock</span>
                                                 <img
@@ -157,21 +171,26 @@ export default function Products({
                                             <div className="mt-4 flex justify-between w-full px-2 flex-col gap-5 items-center">
                                                 <div className='flex flex-row items-center justify-between w-full'>
                                                     <h3 className="w-1/2 overflow-hidden text-ellipsis whitespace-nowrap text-sm text-gray-700">
-                                                        <a href='#'>
+                                                        <span>
                                                             <span aria-hidden="true" className="absolute inset-0" />
                                                             {product.name}
-                                                        </a>
+                                                        </span>
                                                     </h3>
                                                     <p className="text-sm font-medium text-gray-900">${product.price}</p>
                                                 </div>
-                                                <div className='flex w-full flex-row gap-3 items-center justify-between'>
-                                                    <MinusCircle       
+                                                <div className='flex w-full flex-row gap-3 items-center justify-between z-50'>
+                                                    <button 
+                                                        type='button' 
+                                                        className='cursor-pointer pointer-events-auto'                                                       
                                                         onClick={() => {
                                                             updateQuantity(product.id, Math.max(1, quantities[product.id] - 1));
                                                             
                                                         }}
-                                                        className="h-6 w-6 text-gray-500 hover:text-gray-700 cursor-pointer" 
-                                                    />
+                                                    >
+                                                        <MinusCircle       
+                                                        className="h-6 w-6 text-gray-500 group-hover:text-gray-700" 
+                                                        />
+                                                    </button>
                                                     <input               
                                                         onBlur={(e) => {
                                                             const el = e.target;
@@ -200,13 +219,19 @@ export default function Products({
                                                             px-2"
                                                         value={quantities[product.id]}
                                                     />
-                                                    <PlusCircle 
+                                                    <button 
+                                                        type='button' 
+                                                        className='cursor-pointer pointer-events-auto'                                                       
                                                         onClick={() => {
                                                             updateQuantity(product.id, Math.min(product.stock, quantities[product.id] + 1)  );
                                                             
                                                         }}
-                                                        className="h-6 w-6 text-gray-500 hover:text-gray-700 cursor-pointer" 
-                                                    />
+                                                    >
+                                                        <PlusCircle 
+                                                            className="h-6 w-6 text-gray-500 group-hover:text-gray-700 " 
+                                                        />
+                                                    </button>
+                                                    
                                                 </div>
                                                 <button
                                                     disabled={
